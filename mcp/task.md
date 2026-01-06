@@ -1,0 +1,53 @@
+# Tasks
+
+- [x] Verify Translation Endpoint
+- [/] Upgrade to Local AI (Phi-3 & Training)
+    - [x] Create `tts_engine.py` (Text-to-Speech)
+    - [x] Create `predictor.py` (Message Prediction)
+    - [x] Upgrade `main.py` with Phi-3 and new endpoints
+    - [x] Create `train_model.py`
+    - [x] **Fix Dependencies** (`pandas`, `scikit-learn`, `pyttsx3`)
+    - [x] Verify `python train_model.py`
+    - [x] Verify Server (`python -m uvicorn main:app`)
+    - [x] **Optimize Performance** (Switched to Qwen2-1.5B for Speed)
+    - [x] **Database Integration** (Profiles & History)
+    - [x] **Cloud Sync** (Supabase Connected)
+    - [x] **Pregnancy Care Module**
+        - [x] Update DB Schema (`is_pregnant`)
+        - [x] Specialized System Prompt (Care Plans, Alerts)
+        - [x] Verify "Safe Motherhood" flow
+    - [x] **Multi-language Support**
+        - [x] Update Prompt for `mother_tongue` (Telugu, Tamil, Hindi, Kannada)
+        - [x] Sync `language` field to DB
+    - [x] **Voice Input**
+        - [x] Install `SpeechRecognition` & `PyAudio`
+        - [x] Add "Press V to Speak" to Chat UI
+    - [x] **Voice Correction**
+        - [x] Allow editing transcribed text before sending
+    - [x] **Translation Pipeline**
+        - [x] Force LLM to generate English
+        - [x] **Local Offline Translation** (NLLB-200)
+            - [x] Install `sentencepiece`
+            - [x] Load `facebook/nllb-200-distilled-600M`
+            - [x] Map languages (tel_Telu, hin_Deva, etc.)
+    - [/] **Fine-Tuning (Custom Training)**
+        - [x] **Data Preparation**
+            - [x] Analyze `dataset.csv` (Symptoms) & `ai-medical-chatbot.csv` (Q&A)
+            - [x] Create `convert_data.py` to generate `train.jsonl`
+            - [x] Run conversion & Deduplicate
+        - [x] **Training Setup**
+            - [x] Create `train_model.py` (Unsloth + Qwen2 + LoRA)
+            - [x] Configure Hyperparameters (r=16, alpha=16, lr=2e-4)
+        - [/] **Execution**
+            - [/] Run Training (In Progress)
+            - [ ] Save Adapters to `ml-server/adapters`
+        - [ ] **Verification**
+            - [ ] Test Inference with new LoRA adapters
+    - [x] **Vision Analysis (Scans/X-Rays)**
+        - [x] **Option A: Hybrid (Gemini 1.5 Flash)** - **Disabled per User Request**
+            - [x] Note: Free Tier (15 req/min) covers our needs.
+            - [x] Implement `analyze_image` endpoint
+            - [x] Update Chat UI to accept Image Paths
+        - [ ] Option B: Local (Moondream2) - *Rejected*
+
+

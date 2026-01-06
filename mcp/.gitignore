@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pkl
+*.db
+*.sqlite
+*.sqlite3
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+
+# Database files
+*.db
+*.sqlite
+med_mitra.db
+
+# Model files (large)
+*.pkl
+*.h5
+*.pt
+*.pth
+
+# Logs
+*.log
+debug_*.log
+
+# Data files (if large)
+*.csv
+*.jsonl
+medical_data.csv
+
+# OneDrive
+OneDrive/
