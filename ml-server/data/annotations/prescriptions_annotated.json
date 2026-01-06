@@ -1,0 +1,122 @@
+[
+  {
+    "text": "Take one tablet of Paracetamol 500mg twice daily with food for 5 days.",
+    "entities": [
+      {
+        "start": 24,
+        "end": 35,
+        "label": "MEDICINE"
+      },
+      {
+        "start": 36,
+        "end": 42,
+        "label": "DOSAGE"
+      },
+      {
+        "start": 43,
+        "end": 55,
+        "label": "FREQUENCY"
+      },
+      {
+        "start": 61,
+        "end": 65,
+        "label": "CONDITION"
+      },
+      {
+        "start": 70,
+        "end": 76,
+        "label": "DURATION"
+      }
+    ]
+  },
+  {
+    "text": "Do not take if allergic to Aspirin. Continue for 30 days.",
+    "entities": [
+      {
+        "start": 25,
+        "end": 32,
+        "label": "MEDICINE"
+      },
+      {
+        "start": 52,
+        "end": 60,
+        "label": "DURATION"
+      }
+    ]
+  },
+  {
+    "text": "Metformin 500mg twice a day with meals.",
+    "entities": [
+      {
+        "start": 0,
+        "end": 9,
+        "label": "MEDICINE"
+      },
+      {
+        "start": 10,
+        "end": 15,
+        "label": "DOSAGE"
+      },
+      {
+        "start": 16,
+        "end": 27,
+        "label": "FREQUENCY"
+      }
+    ]
+  },
+  {
+    "text": "Apply Diclofenac gel on the affected area three times daily.",
+    "entities": [
+      {
+        "start": 6,
+        "end": 20,
+        "label": "MEDICINE"
+      },
+      {
+        "start": 42,
+        "end": 59,
+        "label": "FREQUENCY"
+      }
+    ]
+  },
+  {
+    "text": "Take Amoxicillin 250mg every 8 hours for 7 days.",
+    "entities": [
+      {
+        "start": 5,
+        "end": 16,
+        "label": "MEDICINE"
+      },
+      {
+        "start": 17,
+        "end": 22,
+        "label": "DOSAGE"
+      },
+      {
+        "start": 23,
+        "end": 36,
+        "label": "FREQUENCY"
+      },
+      {
+        "start": 41,
+        "end": 47,
+        "label": "DURATION"
+      }
+    ]
+  },
+  {
+    "text": "Warning: May cause drowsiness. Do not drive.",
+    "entities": [
+      {
+        "start": 0,
+        "end": 7,
+        "label": "WARNING"
+      },
+      {
+        "start": 9,
+        "end": 29,
+        "label": "WARNING"
+      }
+    ]
+  }
+]

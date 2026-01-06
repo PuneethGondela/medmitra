@@ -1,0 +1,74 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Next.js
+.next/
+out/
+
+# Production
+build/
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env/
+ml-server/venv/
+ml-server/adapters/
+ml-server/models/
+ml-server/torch_nightly.whl
+*.whl
+*.jsonl
+*.dll
+*.mp3
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDEs
+.vscode/
+.idea/
+
+# Sensitive files
+firebase-service-account.json
+backend/firebase-service-account.json
+
+# Temporary files
+*.log
+*.txt
+*.sql
+tsc_errors.txt
+debug-*.log
+
+# Supabase (no longer used)
+supabase/

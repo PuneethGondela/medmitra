@@ -1,0 +1,24 @@
+{
+    "name": "Med Mitra",
+    "short_name": "MedMitra",
+    "description": "Orality-first migrant health wallet with offline access and voice playback.",
+    "start_url": "/worker",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#4F46E5",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "icons": [
+      {
+        "src": "/icons/icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "/icons/icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
+  
