@@ -45,7 +45,6 @@ export async function GET(req: NextRequest) {
         if ((plan as any).generatedAt && typeof (plan as any).generatedAt.toDate === 'function') {
     (plan as any).generatedAt = (plan as any).generatedAt.toDate().toISOString();
 }
-
         return NextResponse.json({ plan });
 
     } catch (error: any) {
