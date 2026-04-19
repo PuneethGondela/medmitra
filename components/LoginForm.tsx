@@ -72,10 +72,10 @@ export default function LoginForm() {
         const result = await apiLogin(form.identifier, form.password);
 
         // If backend returned a Firebase Custom Token, sign in to Firebase SDK
-        if (result.firebaseToken) {
+        if ((result as any).firebaseToken) {
           try {
             const { signInWithCustomToken } = await import("firebase/auth");
-            await signInWithCustomToken(auth, result.firebaseToken);
+            await signInWithCustomToken(auth, (result as any).firebaseToken);
             console.log("Signed in to Firebase with custom token");
           } catch (firebaseErr) {
             console.error("Firebase custom token sign-in failed:", firebaseErr);

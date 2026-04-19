@@ -34,13 +34,13 @@ export default function WorkerProfilePage() {
 
         if (data) {
           setProfile({
-            name: data.name || "",
-            email: data.email || "",
-            phone: data.phone || "",
-            address: data.address || "",
-            emergency_contact: data.emergency_contact || "",
-            emergency_phone: data.emergency_phone || "",
-            language: data.language || "hi-IN",
+            name: (data as any).name || "",
+            email: (data as any).email || "",
+            phone: (data as any).phone || "",
+            address: (data as any).address || "",
+            emergency_contact: (data as any).emergency_contact || "",
+            emergency_phone: (data as any).emergency_phone || "",
+            language: (data as any).language || "hi-IN",
           });
         }
       }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
+export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
     try {
         const authHeader = req.headers.get("authorization");
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
         }
 
         const doc = snapshot.docs[0];
-        const plan = { id: doc.id, ...doc.data() };
+        const plan: any = { id: doc.id, ...doc.data() };
 
         // Convert Timestamp to ISO string for JSON safety
         if (plan.generatedAt && typeof plan.generatedAt.toDate === 'function') {

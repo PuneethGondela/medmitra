@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 
 // Initialize Firebase Admin (avoid duplicate initialization)
-let adminApp: admin.app.App;
+let adminApp: admin.app.App | undefined;
 let adminAuth: admin.auth.Auth;
 let adminDb: admin.firestore.Firestore;
 let adminStorage: admin.storage.Storage;
@@ -96,4 +96,4 @@ try {
 }
 
 export { adminAuth, adminDb, adminStorage };
-export default adminApp;
+// export default adminApp;
