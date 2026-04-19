@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
         const plan: any = { id: doc.id, ...doc.data() };
 
         // Convert Timestamp to ISO string for JSON safety
-        if ((plan as any).generatedAt && typeof (plan as any).generatedAt.toDate === 'function') {
+       if ((plan as any).generatedAt && typeof (plan as any).generatedAt.toDate === 'function') {
     (plan as any).generatedAt = (plan as any).generatedAt.toDate().toISOString();
 }
         return NextResponse.json({ plan });
