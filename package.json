@@ -14,6 +14,7 @@
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",
+    "@supabase/supabase-js": "^2.39.3",
     "@types/node": "^20.8.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
@@ -33,9 +34,7 @@
     "socket.io": "^4.6.0",
     "socket.io-client": "^4.6.0",
     "tailwind-merge": "^3.4.0",
-    "recharts": "^2.12.7",
-    "@supabase/supabase-js": "^2.43.4",
-    "node-fetch": "^2.7.0"
+    "typescript": "^5.2.2"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
