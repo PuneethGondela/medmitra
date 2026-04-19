@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
         }
 
         const doc = snapshot.docs[0];
-        const plan = { id: doc.id, ...doc.data() };
+        const plan: any = { id: doc.id, ...doc.data() };
 
         // Convert Timestamp to ISO string for JSON safety
         if (plan.generatedAt && typeof plan.generatedAt.toDate === 'function') {
