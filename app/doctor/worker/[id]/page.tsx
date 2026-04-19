@@ -39,21 +39,21 @@ export default function DoctorWorkerProfilePage() {
     try {
       const data = await getDocument("users", workerId);
 
-      if (data && data.role === "worker") {
+      if (data && (data as any).role === "worker") {
         setWorker(data);
         setProfile({
-          name: data.name || "",
-          email: data.email || "",
-          phone: data.phone || "",
-          address: data.address || "",
-          emergency_contact: data.emergency_contact || "",
-          emergency_phone: data.emergency_phone || "",
-          language: data.language || "hi-IN",
-          aadhaar_number: data.aadhaar_number || "",
-          aadhaar_name: data.aadhaar_name || "",
-          aadhaar_dob: data.aadhaar_dob || "",
-          aadhaar_address: data.aadhaar_address || "",
-          aadhaar_verified: data.aadhaar_verified || false,
+          name: (data as any).name || "",
+          email: (data as any).email || "",
+          phone: (data as any).phone || "",
+          address: (data as any).address || "",
+          emergency_contact: (data as any).emergency_contact || "",
+          emergency_phone: (data as any).emergency_phone || "",
+          language: (data as any).language || "hi-IN",
+          aadhaar_number: (data as any).aadhaar_number || "",
+          aadhaar_name: (data as any).aadhaar_name || "",
+          aadhaar_dob: (data as any).aadhaar_dob || "",
+          aadhaar_address: (data as any).aadhaar_address || "",
+          aadhaar_verified: (data as any).aadhaar_verified || false,
         });
       }
     } catch (err: any) {
@@ -74,7 +74,7 @@ export default function DoctorWorkerProfilePage() {
 
       const userData = await getDocument("users", user.uid);
 
-      if (userData?.role !== "doctor" && userData?.role !== "admin") {
+      if ((userData as any)?.role !== "doctor" && (userData as any)?.role !== "admin") {
         router.push("/worker");
         return;
       }

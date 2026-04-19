@@ -57,8 +57,8 @@ export default function DoctorVisitsPage() {
       if (searchQuery.trim()) {
         const queryLower = searchQuery.toLowerCase();
         recordsData = recordsData.filter(r =>
-          (r.diagnosis_simple || "").toLowerCase().includes(queryLower) ||
-          (r.diagnosis_raw || "").toLowerCase().includes(queryLower)
+          ((r as any).diagnosis_simple || "").toLowerCase().includes(queryLower) ||
+          ((r as any).diagnosis_raw || "").toLowerCase().includes(queryLower)
         );
       }
 
@@ -113,7 +113,7 @@ export default function DoctorVisitsPage() {
         {records.map((r) => (
           <div key={r.id} className="card flex justify-between items-center">
             <div>
-              <div className="font-medium text-gray-900">{r.diagnosis_simple ?? r.diagnosis_raw}</div>
+              <div className="font-medium text-gray-900">{(r as any).diagnosis_simple ?? (r as any).diagnosis_raw}</div>
               <div className="text-xs text-gray-500">
                 Worker: {r.worker_id?.slice(0, 8)} • {
                   r.visit_date?.toDate?.()

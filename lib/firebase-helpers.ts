@@ -69,7 +69,7 @@ export const queryCollection = async (
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({
     id: doc.id,
-    ...doc.data()
+    ...(doc.data() as object)
   }));
 };
 
@@ -78,7 +78,7 @@ export const getDocument = async (collectionName: string, docId: string) => {
   const docRef = doc(db, collectionName, docId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() };
+    return { id: docSnap.id, ...(docSnap.data() as object) };
   }
   return null;
 };
