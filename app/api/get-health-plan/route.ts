@@ -39,13 +39,12 @@ export async function GET(req: NextRequest) {
         }
 
         const doc = snapshot.docs[0];
-        const plan = { id: doc.id, ...doc.data() };
+        const plan: any = { id: doc.id, ...doc.data() };
 
         // Convert Timestamp to ISO string for JSON safety
-        if (plan.generatedAt && typeof plan.generatedAt.toDate === 'function') {
-            plan.generatedAt = plan.generatedAt.toDate().toISOString();
-        }
-
+       if ((plan as any).generatedAt && typeof (plan as any).generatedAt.toDate === 'function') {
+    (plan as any).generatedAt = (plan as any).generatedAt.toDate().toISOString();
+}
         return NextResponse.json({ plan });
 
     } catch (error: any) {
