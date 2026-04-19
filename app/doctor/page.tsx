@@ -145,7 +145,7 @@ export default function DoctorDashboard() {
         setWorker(exactMatch);
         setShowModal(true);
         setMode("existing");
-        setQuery("");
+        setSearchQuery("");
         return;
       }
 
