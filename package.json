@@ -35,11 +35,11 @@
     "tailwind-merge": "^3.4.0",
     "typescript": "^5.2.2",
     "eslint": "^8.57.0",
-  "eslint-config-next": "14.2.35",
-  "next": "14.2.35",
-  "react": "18.3.1",
-  "react-dom": "18.3.1",
-  "recharts": "^3.8.0"
+    "eslint-config-next": "14.2.35",
+    "next": "14.2.35",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "recharts": "^3.8.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
