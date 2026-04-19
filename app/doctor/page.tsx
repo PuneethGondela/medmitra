@@ -18,7 +18,7 @@ import { LANGUAGES } from "../../utils/language";
 
 export default function DoctorDashboard() {
   const { t, locale, setLocale } = useTranslation();
-  const [query, setQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [worker, setWorker] = useState<any | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -133,19 +133,19 @@ export default function DoctorDashboard() {
 
   async function handleSearch(e?: React.FormEvent) {
     if (e) e.preventDefault();
-    if (!query.trim()) return;
+    if (!searchQuery.trim()) return;
 
     setSearching(true);
     setAllowWrite(false); // Search = Read Only
 
     try {
       // Try exact ID match first
-      const exactMatch = await getDocument("users", query.trim());
+      const exactMatch = await getDocument("users", searchQuery.trim());
       if (exactMatch && (exactMatch as any).role === "worker") {
         setWorker(exactMatch);
         setShowModal(true);
         setMode("existing");
-        setQuery("");
+        setSearchQuery("");
         return;
       }
 
@@ -156,7 +156,7 @@ export default function DoctorDashboard() {
         limit(100)
       );
       const workersSnapshot = await getDocs(workersQuery);
-      const searchTerm = query.toLowerCase();
+      const searchTerm = searchQuery.toLowerCase();
       const matches = workersSnapshot.docs
         .map((doc) => ({ id: doc.id, ...doc.data() }))
         .filter(
@@ -177,7 +177,7 @@ export default function DoctorDashboard() {
           setShowModal(true);
           setMode("existing");
         }
-        setQuery("");
+        setSearchQuery("");
       } else {
         alert("Worker not found. To create a new worker/visit, please use 'New Worker' button or Scan QR.");
         setMode("none");
@@ -277,8 +277,8 @@ export default function DoctorDashboard() {
               </label>
               <input
                 ref={searchRef}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Enter Health ID, name, or phone number... (Press '/' to focus)"
                 className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-slate-950 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:border-primary-600 transition-all duration-200"
               />
