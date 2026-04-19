@@ -130,10 +130,10 @@ export const createDoctor = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Doctor with this username already exists' });
         }
 
-        // Generate Doctor ID (DOC_YEAR_###) - Optimized using count aggregation
+        // Generate Doctor ID (DOC_YEAR_###)
         const year = new Date().getFullYear();
-        const doctorsCountSnapshot = await adminDb.collection(COLLECTIONS.DOCTORS).count().get();
-        const count = doctorsCountSnapshot.data().count + 1;
+        const doctorsSnapshot = await adminDb.collection(COLLECTIONS.DOCTORS).get();
+        const count = doctorsSnapshot.size + 1;
         const doctorId = `DOC_${year}_${String(count).padStart(3, '0')}`;
 
         // Use provided password or generate temp

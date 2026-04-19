@@ -4,26 +4,23 @@ import { adminDb, COLLECTIONS } from '../config/firebase';
 // Admin dashboard stats (full system view)
 export const getDashboardStats = async (req: Request, res: Response) => {
     try {
-        // Get counts using Firestore aggregation queries (optimized)
+        // Get counts using Firestore queries
         const [doctorsSnapshot, workersSnapshot, donorsSnapshot] = await Promise.all([
             adminDb.collection(COLLECTIONS.DOCTORS)
                 .where('account_status', '==', 'ACTIVE')
                 .where('deleted_at', '==', null)
-                .count()
                 .get(),
             adminDb.collection(COLLECTIONS.WORKERS)
                 .where('status', '==', 'ACTIVE')
-                .count()
                 .get(),
             adminDb.collection(COLLECTIONS.BLOOD_DONORS)
                 .where('status', '==', 'AVAILABLE')
-                .count()
                 .get()
         ]);
 
-        const doctorCount = doctorsSnapshot.data().count;
-        const workerCount = workersSnapshot.data().count;
-        const donorCount = donorsSnapshot.data().count;
+        const doctorCount = doctorsSnapshot.size;
+        const workerCount = workersSnapshot.size;
+        const donorCount = donorsSnapshot.size;
 
         // Mock Visits Count (since visits are in Firestore records collection)
         // In real app: query Firestore records collection for today's visits
@@ -71,30 +68,26 @@ export const getDoctorStats = async (req: Request, res: Response) => {
         today.setHours(0, 0, 0, 0);
 
         try {
-            // Use aggregation queries for better performance
-            const [recordsSnapshot, workersSnapshot] = await Promise.all([
-                adminDb.collection(COLLECTIONS.RECORDS)
-                    .where('doctor_id', '==', doctorId)
-                    .count()
-                    .get(),
-                adminDb.collection(COLLECTIONS.WORKERS)
-                    .where('assigned_doctor_id', '==', doctorId)
-                    .count()
-                    .get()
-            ]);
+            const recordsSnapshot = await adminDb.collection(COLLECTIONS.RECORDS)
+                .where('doctor_id', '==', doctorId)
+                .get();
 
-            const allVisits = recordsSnapshot.data().count;
-            const assignedWorkersCount = workersSnapshot.data().count;
+            const allVisits = recordsSnapshot.size;
 
             // Count today's visits (you'd filter by date in a real query)
             // For now, return placeholder - you'd need to add proper date filtering
             const todayVisits = 0; // Would need proper date query
 
+            // Get assigned workers count from doctor_assignments or workers collection
+            const workersSnapshot = await adminDb.collection(COLLECTIONS.WORKERS)
+                .where('assigned_doctor_id', '==', doctorId)
+                .get();
+
             res.json({
                 doctorId,
                 todayVisits,
                 totalVisits: allVisits,
-                assignedWorkers: assignedWorkersCount
+                assignedWorkers: workersSnapshot.size
             });
         } catch (queryError) {
             // If records collection doesn't exist or query fails, return placeholder

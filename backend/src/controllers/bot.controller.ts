@@ -33,14 +33,13 @@ const detectSuspiciousActivity = async () => {
             });
         });
 
-        // Get failed logins from last hour (optimized counting)
+        // Get failed logins from last hour
         const failedLoginsSnapshot = await adminDb.collection(COLLECTIONS.AUDIT_LOGS)
             .where('action', '==', 'LOGIN_FAILED')
             .where('timestamp', '>=', oneHourAgo)
-            .count()
             .get();
 
-        const failedLoginCount = failedLoginsSnapshot.data().count;
+        const failedLoginCount = failedLoginsSnapshot.size;
 
         const suspiciousPatterns: any[] = [];
         if (failedLoginCount > 10) {
@@ -52,7 +51,6 @@ const detectSuspiciousActivity = async () => {
         }
 
         // Check for unusual activity patterns (more than 20 actions in last hour)
-        // Note: we still need the full snapshot here to group by user_type/action client-side
         const oneHourAgoSnapshot = await adminDb.collection(COLLECTIONS.AUDIT_LOGS)
             .where('timestamp', '>=', oneHourAgo)
             .get();
@@ -99,19 +97,16 @@ const detectSuspiciousActivity = async () => {
 // Helper function to get admin dashboard context
 const getAdminContext = async () => {
     try {
-        const [doctorsCountSnapshot, workersCountSnapshot, donorsCountSnapshot] = await Promise.all([
+        const [doctorsSnapshot, workersSnapshot, donorsSnapshot] = await Promise.all([
             adminDb.collection(COLLECTIONS.DOCTORS)
                 .where('account_status', '==', 'ACTIVE')
                 .where('deleted_at', '==', null)
-                .count()
                 .get(),
             adminDb.collection(COLLECTIONS.WORKERS)
                 .where('status', '==', 'ACTIVE')
-                .count()
                 .get(),
             adminDb.collection(COLLECTIONS.BLOOD_DONORS)
                 .where('status', '==', 'AVAILABLE')
-                .count()
                 .get()
         ]);
 
@@ -158,9 +153,9 @@ const getAdminContext = async () => {
 
         return {
             stats: {
-                totalDoctors: doctorsCountSnapshot.data().count,
-                totalWorkers: workersCountSnapshot.data().count,
-                totalDonors: donorsCountSnapshot.data().count
+                totalDoctors: doctorsSnapshot.size,
+                totalWorkers: workersSnapshot.size,
+                totalDonors: donorsSnapshot.size
             },
             recentDoctors: recentDoctorsSnapshot.docs.map(doc => {
                 const data = doc.data();

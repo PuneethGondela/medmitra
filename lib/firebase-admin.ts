@@ -15,6 +15,7 @@ try {
     // Try to load service account from file first
     // Try multiple possible paths
     const possiblePaths = [
+      'c:\\Users\\nidra\\OneDrive\\Desktop\\Med Mitra\\firebase-service-account.json', // Absolute path
       path.join(process.cwd(), 'backend', 'firebase-service-account.json'),
       path.join(process.cwd(), 'firebase-service-account.json'),
       path.join(__dirname, '..', 'backend', 'firebase-service-account.json'),
