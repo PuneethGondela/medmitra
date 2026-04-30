@@ -48,7 +48,7 @@ export default function DoctorVisitsPage() {
       }
 
       const recordsSnapshot = await getDocs(recordsQuery);
-      let recordsData = recordsSnapshot.docs.map(doc => ({
+      let recordsData: any[] = recordsSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));

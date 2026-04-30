@@ -69,7 +69,7 @@ export const queryCollection = async (
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({
     id: doc.id,
-    ...doc.data()
+    ...(doc.data() as any)
   }));
 };
 

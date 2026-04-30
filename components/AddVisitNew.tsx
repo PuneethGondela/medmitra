@@ -431,7 +431,7 @@ export default function AddVisitNew({
             <option value="or-IN">Odia (ଓଡ଼ିଆ)</option>
           </select>
           <p className="text-xs text-slate-500 mt-1">
-            This language will be used for the worker's dashboard and AI bot interactions.
+            This language will be used for the worker&apos;s dashboard and AI bot interactions.
           </p>
         </div>
 
@@ -480,7 +480,7 @@ export default function AddVisitNew({
             onChange={(e) => setAddress(e.target.value)}
             className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-slate-950 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:border-primary-600 transition-all duration-200 resize-y"
             rows={3}
-            placeholder="Enter worker's address"
+            placeholder="Enter worker&apos;s address"
           />
         </div>
 

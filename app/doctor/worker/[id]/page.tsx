@@ -37,7 +37,7 @@ export default function DoctorWorkerProfilePage() {
   const loadWorkerProfile = React.useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getDocument("users", workerId);
+      const data: any = await getDocument("users", workerId);
 
       if (data && data.role === "worker") {
         setWorker(data);
@@ -72,7 +72,7 @@ export default function DoctorWorkerProfilePage() {
         return;
       }
 
-      const userData = await getDocument("users", user.uid);
+      const userData: any = await getDocument("users", user.uid);
 
       if (userData?.role !== "doctor" && userData?.role !== "admin") {
         router.push("/worker");

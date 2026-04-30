@@ -1,7 +1,7 @@
 // app/doctor/page.tsx - MIGRATED TO FIREBASE
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { getCurrentUser, queryCollection, getDocument } from "../../lib/firebase-helpers";
 import { db, auth } from "../../lib/firebase";
 import { collection, query, where, getDocs, limit, orderBy, Timestamp } from "firebase/firestore";
@@ -33,7 +33,7 @@ export default function DoctorDashboard() {
 
   // ... (keeping existing useEffects)
 
-  async function loadAllVisits() {
+  const loadAllVisits = useCallback(async () => {
     if (!doctorId) return;
     setLoadingVisits(true);
     try {
@@ -69,13 +69,13 @@ export default function DoctorDashboard() {
     } finally {
       setLoadingVisits(false);
     }
-  }
+  }, [doctorId]);
 
   useEffect(() => {
     if (mode === "all-visits") {
       loadAllVisits();
     }
-  }, [mode, doctorId]);
+  }, [mode, doctorId, loadAllVisits]);
 
   async function loadData() {
     try {
@@ -325,7 +325,7 @@ export default function DoctorDashboard() {
                       typeof payload === "string" ? JSON.parse(payload) : payload;
                     const uid = parsed.id;
 
-                    const data = await getDocument("users", uid);
+                    const data: any = await getDocument("users", uid);
                     if (data && data.role === "worker") {
                       onScannedWorker(data);
                       setMode("none");
