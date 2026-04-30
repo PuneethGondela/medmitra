@@ -5,10 +5,10 @@ import path from 'path';
 import fs from 'fs';
 
 // Initialize Firebase Admin (avoid duplicate initialization)
-let adminApp: admin.app.App;
-let adminAuth: admin.auth.Auth;
-let adminDb: admin.firestore.Firestore;
-let adminStorage: admin.storage.Storage;
+let adminApp: admin.app.App = null as any;
+let adminAuth: admin.auth.Auth = null as any;
+let adminDb: admin.firestore.Firestore = null as any;
+let adminStorage: admin.storage.Storage = null as any;
 
 try {
   if (admin.apps.length === 0) {
