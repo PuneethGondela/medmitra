@@ -1,6 +1,6 @@
 // app/api/admin/create-doctor/route.ts - MIGRATED TO FIREBASE
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
 import { getAuth } from "firebase-admin/auth";
 
 export async function POST(req: NextRequest) {

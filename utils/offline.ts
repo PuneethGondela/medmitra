@@ -26,7 +26,7 @@ export async function getRecords(workerId: string | null): Promise<any[]> {
       const recordsData = await Promise.all(
         recordsSnapshot.docs.map(async (doc) => {
           const record = { id: doc.id, ...doc.data() };
-          
+
           // Get attachments
           const attachmentsQuery = query(
             collection(db, "attachments"),
@@ -41,7 +41,7 @@ export async function getRecords(workerId: string | null): Promise<any[]> {
           // Get doctor info if available
           if ((record as any).doctor_id) {
             try {
-              const doctorDoc = await import("@/lib/firebase-helpers").then(m => 
+              const doctorDoc = await import("@/lib/firebase-helpers").then(m =>
                 m.getDocument("users", (record as any).doctor_id)
               );
               (record as any).doctor = doctorDoc ? { name: (doctorDoc as any).name } : null;
@@ -54,9 +54,19 @@ export async function getRecords(workerId: string | null): Promise<any[]> {
         })
       );
 
-      // Update cache
+      // Update cache with sanitized records (strip sensitive fields)
       try {
-        localStorage.setItem(cacheKey, JSON.stringify(recordsData));
+        const sanitizedRecords = recordsData.map(record => {
+          const sanitized = { ...record };
+          // Replace full attachment objects with just IDs
+          if ((sanitized as any).attachments) {
+            (sanitized as any).attachments = (sanitized as any).attachments.map((att: any) => att.id);
+          }
+          // Remove doctor info to prevent storing potentially sensitive data
+          delete (sanitized as any).doctor;
+          return sanitized;
+        });
+        localStorage.setItem(cacheKey, JSON.stringify(sanitizedRecords));
       } catch (e) {
         console.warn("localStorage write failed", e);
       }
