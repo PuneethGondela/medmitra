@@ -17,7 +17,7 @@ export const getAllWorkers = async (req: Request, res: Response) => {
         res.json(workers);
     } catch (error: any) {
         console.error('Get all workers error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -37,7 +37,7 @@ export const getWorkerById = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('Get worker by ID error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -73,6 +73,6 @@ export const searchWorkers = async (req: Request, res: Response) => {
         res.json(workers);
     } catch (error: any) {
         console.error('Search workers error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };

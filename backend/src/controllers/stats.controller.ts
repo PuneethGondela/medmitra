@@ -51,7 +51,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         console.error('Get dashboard stats error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -109,6 +109,6 @@ export const getDoctorStats = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         console.error('Get doctor stats error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };

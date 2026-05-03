@@ -286,7 +286,7 @@ export const analyzeSystem = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         console.error('Bot Error:', error.message);
-        res.status(500).json({ error: 'Failed to analyze system data', details: error.message });
+        res.status(500).json({ error: 'Failed to analyze system data' });
     }
 };
 
@@ -302,7 +302,7 @@ export const speakText = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         console.error('TTS Error:', error.message);
-        res.status(500).json({ error: 'Failed to generate speech', details: error.message });
+        res.status(500).json({ error: 'Failed to generate speech' });
     }
 };
 
@@ -521,7 +521,7 @@ When user asks about their health records or visits, you can reference their med
                 role: req.body.role || 'user'
             });
         }
-        res.status(500).json({ error: 'Failed to chat with bot', details: error.message });
+        res.status(500).json({ error: 'Failed to chat with bot' });
     }
 };
 
@@ -538,6 +538,6 @@ export const translateText = async (req: Request, res: Response) => {
         res.json(response.data);
     } catch (error: any) {
         console.error('Translation Error:', error.message);
-        res.status(500).json({ error: 'Failed to translate', details: error.message });
+        res.status(500).json({ error: 'Failed to translate' });
     }
 };

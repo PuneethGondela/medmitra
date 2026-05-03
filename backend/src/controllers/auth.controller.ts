@@ -130,7 +130,7 @@ export const loginAdmin = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('LOGIN ERROR:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -164,7 +164,7 @@ export const createInitialAdmin = async (req: Request, res: Response) => {
         res.status(201).json({ message: 'Admin created' });
     } catch (error: any) {
         console.error('Create admin error:', error);
-        res.status(500).json({ error: 'Failed to create admin', details: error.message });
+        res.status(500).json({ error: 'Failed to create admin' });
     }
 };
 
@@ -190,7 +190,7 @@ export const generate2FA = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         console.error(error);
-        res.status(500).json({ error: 'Failed to generate 2FA', details: error.message });
+        res.status(500).json({ error: 'Failed to generate 2FA' });
     }
 };
 
@@ -222,6 +222,6 @@ export const verify2FA = async (req: Request, res: Response) => {
 
     } catch (error: any) {
         console.error(error);
-        res.status(500).json({ error: 'Failed to verify 2FA', details: error.message });
+        res.status(500).json({ error: 'Failed to verify 2FA' });
     }
 };

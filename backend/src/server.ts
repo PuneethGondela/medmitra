@@ -76,7 +76,8 @@ app.get('/api/debug/fix-doctor', async (req, res) => {
 
         return res.json({ status: "error", msg: "User not found in Doctors or Admins" });
     } catch (e: any) {
-        return res.json({ status: "error", msg: e.message });
+        console.error('Debug route error:', e);
+        return res.json({ status: "error", msg: "Internal server error" });
     }
 });
 // END DEBUG ROUTE

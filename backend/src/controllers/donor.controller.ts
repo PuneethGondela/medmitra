@@ -61,7 +61,7 @@ export const getAllDonors = async (req: Request, res: Response) => {
         }
     } catch (error: any) {
         console.error('Get all donors error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -114,6 +114,6 @@ export const createDonor = async (req: Request, res: Response) => {
         res.status(201).json({ message: 'Donor registered successfully', id: donorRef.id });
     } catch (error: any) {
         console.error('Create donor error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };

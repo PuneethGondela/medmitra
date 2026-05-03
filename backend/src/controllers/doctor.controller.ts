@@ -86,7 +86,7 @@ export const loginDoctor = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('DOCTOR LOGIN ERROR:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -209,7 +209,7 @@ export const createDoctor = async (req: Request, res: Response) => {
             return res.status(400).json({ error: error.errors });
         }
         console.error('Create doctor error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -236,7 +236,7 @@ export const getAllDoctors = async (req: Request, res: Response) => {
         res.json(doctors);
     } catch (error: any) {
         console.error('Get all doctors error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -273,7 +273,7 @@ export const getDoctorById = async (req: Request, res: Response) => {
         res.json(doctor);
     } catch (error: any) {
         console.error('Get doctor by ID error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -306,7 +306,7 @@ export const getCurrentDoctor = async (req: Request, res: Response) => {
         res.json(doctor);
     } catch (error: any) {
         console.error('Get current doctor error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -367,7 +367,7 @@ export const updateDoctor = async (req: Request, res: Response) => {
         res.json({ message: 'Doctor updated', doctor: updatedDoctor });
     } catch (error: any) {
         console.error('Update doctor error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -427,7 +427,7 @@ export const updateCurrentDoctor = async (req: Request, res: Response) => {
         res.json({ message: 'Profile updated', doctor: updatedDoctor });
     } catch (error: any) {
         console.error('Update current doctor error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
 
@@ -465,6 +465,6 @@ export const deleteDoctor = async (req: Request, res: Response) => {
         res.json({ message: 'Doctor deleted successfully' });
     } catch (error: any) {
         console.error('Delete doctor error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };

@@ -32,6 +32,6 @@ export const getAuditLogs = async (req: Request, res: Response) => {
         res.json(logs);
     } catch (error: any) {
         console.error('Get audit logs error:', error);
-        res.status(500).json({ error: 'Internal server error', details: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
