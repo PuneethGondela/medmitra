@@ -1,15 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-interface AuthRequest extends Request {
-    user?: any;
+interface DecodedToken {
+    id?: string;
+    userId?: string;
+    adminId?: string;
+    doctorId?: string;
+    role: string;
+    email?: string;
 }
 
 /**
  * Enhanced authentication middleware that handles multiple token types
  * Supports: Admin tokens, Doctor tokens, and standard JWT tokens
  */
-export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -19,11 +24,11 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
 
     try {
         const secret = process.env.JWT_SECRET || 'fallback_secret_do_not_use_in_prod';
-        const decoded: any = jwt.verify(token, secret);
+        const decoded = jwt.verify(token, secret) as DecodedToken;
 
         // Normalize user object based on token type
         req.user = {
-            id: decoded.adminId || decoded.doctorId || decoded.userId || decoded.id,
+            id: (decoded.adminId || decoded.doctorId || decoded.userId || decoded.id) as string,
             role: decoded.role,
             adminId: decoded.adminId,
             doctorId: decoded.doctorId,
@@ -41,7 +46,7 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
  * Require specific role (with SUPER_ADMIN bypass)
  */
 export const requireRole = (role: string) => {
-    return (req: AuthRequest, res: Response, next: NextFunction) => {
+    return (req: Request, res: Response, next: NextFunction) => {
         if (!req.user) {
             return res.status(401).json({ error: 'Authentication required' });
         }
@@ -64,7 +69,7 @@ export const requireRole = (role: string) => {
  * Require admin role (SUPER_ADMIN, HOSPITAL_ADMIN, etc.)
  */
 export const requireAdmin = () => {
-    return (req: AuthRequest, res: Response, next: NextFunction) => {
+    return (req: Request, res: Response, next: NextFunction) => {
         if (!req.user) {
             return res.status(401).json({ error: 'Authentication required' });
         }
@@ -83,7 +88,7 @@ export const requireAdmin = () => {
  * Require doctor role (doctors or SUPER_ADMIN)
  */
 export const requireDoctor = () => {
-    return (req: AuthRequest, res: Response, next: NextFunction) => {
+    return (req: Request, res: Response, next: NextFunction) => {
         if (!req.user) {
             return res.status(401).json({ error: 'Authentication required' });
         }
@@ -106,7 +111,7 @@ export const requireDoctor = () => {
  * Require admin OR doctor role
  */
 export const requireAdminOrDoctor = () => {
-    return (req: AuthRequest, res: Response, next: NextFunction) => {
+    return (req: Request, res: Response, next: NextFunction) => {
         if (!req.user) {
             return res.status(401).json({ error: 'Authentication required' });
         }
@@ -131,17 +136,17 @@ export const requireAdminOrDoctor = () => {
 /**
  * Optional authentication - adds user to req if token present, but doesn't require it
  */
-export const optionalAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token) {
         try {
             const secret = process.env.JWT_SECRET || 'fallback_secret_do_not_use_in_prod';
-            const decoded: any = jwt.verify(token, secret);
+            const decoded = jwt.verify(token, secret) as DecodedToken;
 
             req.user = {
-                id: decoded.adminId || decoded.doctorId || decoded.userId || decoded.id,
+                id: (decoded.adminId || decoded.doctorId || decoded.userId || decoded.id) as string,
                 role: decoded.role,
                 adminId: decoded.adminId,
                 doctorId: decoded.doctorId,

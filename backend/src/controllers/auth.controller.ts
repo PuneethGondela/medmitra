@@ -170,7 +170,6 @@ export const createInitialAdmin = async (req: Request, res: Response) => {
 
 export const generate2FA = async (req: Request, res: Response) => {
     try {
-        // @ts-ignore
         const adminId = req.user.adminId;
         const secret = authenticator.generateSecret();
 
@@ -196,7 +195,6 @@ export const generate2FA = async (req: Request, res: Response) => {
 
 export const verify2FA = async (req: Request, res: Response) => {
     try {
-        // @ts-ignore
         const adminId = req.user.adminId;
         const { token } = req.body;
 
