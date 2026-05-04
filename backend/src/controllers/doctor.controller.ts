@@ -216,7 +216,7 @@ export const createDoctor = async (req: Request, res: Response) => {
 export const getAllDoctors = async (req: Request, res: Response) => {
     try {
         const snapshot = await adminDb.collection(COLLECTIONS.DOCTORS)
-            // .where('deleted_at', '==', null) // Relaxed for debug visibility
+            .where('deleted_at', '==', null)
             .orderBy('created_at', 'desc')
             .get();
 
