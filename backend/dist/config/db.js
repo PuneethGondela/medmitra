@@ -11,7 +11,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config(); // Load from .env in current directory provided by CWD or default behavior
 const pool = new pg_1.Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: { rejectUnauthorized: false } // Required for Supabase
 });
 const query = (text, params) => pool.query(text, params);
 exports.query = query;
