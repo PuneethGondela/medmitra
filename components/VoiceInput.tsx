@@ -70,7 +70,7 @@ export default function VoiceInput({
                 setError("Browser does not support voice input.");
             }
         }
-    }, [lang]); // Re-init on lang change usually requires more logic, but basic dep is ok. 
+    }, [lang, onTranscript]); // Re-init on lang change usually requires more logic, but basic dep is ok.
     // Ideally we'd stop/start if lang changes but for now simple init is fine.
 
     const toggleListening = () => {

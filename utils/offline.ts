@@ -33,20 +33,20 @@ export async function getRecords(workerId: string | null): Promise<any[]> {
             where("record_id", "==", record.id)
           );
           const attachmentsSnapshot = await getDocs(attachmentsQuery);
-          record.attachments = attachmentsSnapshot.docs.map(att => ({
+          (record as any).attachments = attachmentsSnapshot.docs.map(att => ({
             id: att.id,
-            ...att.data()
+            ...(att.data() as any)
           }));
 
           // Get doctor info if available
-          if (record.doctor_id) {
+          if ((record as any).doctor_id) {
             try {
               const doctorDoc = await import("@/lib/firebase-helpers").then(m => 
-                m.getDocument("users", record.doctor_id)
+                m.getDocument("users", (record as any).doctor_id)
               );
-              record.doctor = doctorDoc ? { name: doctorDoc.name } : null;
+              (record as any).doctor = doctorDoc ? { name: (doctorDoc as any).name } : null;
             } catch (e) {
-              record.doctor = null;
+              (record as any).doctor = null;
             }
           }
 
