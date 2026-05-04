@@ -84,7 +84,7 @@ export const loginAdmin = async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        const admin = adminDoc.data();
+        const admin = adminDoc.data() || {};
         const adminId = adminDoc.id;
 
         // 2. Validate Password
@@ -142,8 +142,7 @@ export const loginAdmin = async (req: Request, res: Response) => {
 // Enable 2FA
 export const enable2FA = async (req: Request, res: Response) => {
     try {
-        // @ts-ignore
-        const adminId = req.user?.adminId;
+        const adminId = req.user.adminId;
         const secret = authenticator.generateSecret();
         const otpauth = authenticator.keyuri(adminId, 'MediMitr Admin', secret);
 
@@ -151,8 +150,7 @@ export const enable2FA = async (req: Request, res: Response) => {
 
         // Store secret temporarily or permanently based on your flow
         await adminDb.collection(COLLECTIONS.ADMINS).doc(adminId).update({
-            two_factor_secret: secret,
-            two_factor_enabled: false // pending verification
+            pending_totp_secret: secret
         });
 
         res.json({ qrCodeUrl, secret });
@@ -164,18 +162,33 @@ export const enable2FA = async (req: Request, res: Response) => {
 // Verify & Activate 2FA
 export const verify2FA = async (req: Request, res: Response) => {
     try {
-        // @ts-ignore
-        const adminId = req.user?.adminId;
+        const adminId = req.user.adminId;
         const { token } = req.body;
 
-        const doc = await adminDb.collection(COLLECTIONS.ADMINS).doc(adminId).get();
-        const secret = doc.data()?.two_factor_secret;
+        const adminDoc = await adminDb.collection(COLLECTIONS.ADMINS).doc(adminId).get();
+        if (!adminDoc.exists) {
+            return res.status(404).json({ error: 'Admin not found' });
+        }
+
+        const admin = adminDoc.data() || {};
+        const isPending = !!admin.pending_totp_secret;
+        const secret = isPending ? admin.pending_totp_secret : admin.totp_secret;
+
+        if (!secret) {
+            return res.status(400).json({ error: '2FA not set up for this admin' });
+        }
 
         const isValid = authenticator.verify({ token, secret });
 
         if (isValid) {
-            await doc.ref.update({ two_factor_enabled: true });
-            res.json({ message: '2FA enabled successfully' });
+            if (isPending) {
+                // Activate 2FA by moving the secret from pending to active
+                await adminDoc.ref.update({
+                    totp_secret: secret,
+                    pending_totp_secret: FieldValue.delete()
+                });
+            }
+            res.json({ message: '2FA Verified Successfully' });
         } else {
             res.status(400).json({ error: 'Invalid token' });
         }
