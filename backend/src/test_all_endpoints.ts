@@ -51,14 +51,14 @@ async function getAdminToken(): Promise<string | null> {
 async function testDatabaseConnection() {
     try {
         const result = await pool.query('SELECT NOW()');
-        logResult({
+        console.log({
             name: 'Database Connection',
             passed: true,
             data: { timestamp: result.rows[0].now }
         });
         return true;
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'Database Connection',
             passed: false,
             error: error.message
@@ -75,13 +75,13 @@ async function testDatabaseTables() {
     for (const table of tables) {
         try {
             const result = await pool.query(`SELECT COUNT(*) FROM ${table}`);
-            logResult({
+            console.log({
                 name: `Table: ${table}`,
                 passed: true,
                 data: { count: result.rows[0].count }
             });
         } catch (error: any) {
-            logResult({
+            console.log({
                 name: `Table: ${table}`,
                 passed: false,
                 error: error.message
@@ -100,13 +100,13 @@ async function testAdminLogin() {
             identifier: ADMIN_EMAIL,
             password: ADMIN_PASSWORD
         });
-        logResult({
+        console.log({
             name: 'Admin Login (Email)',
             passed: response.status === 200 && !!response.data.token,
             data: { email: ADMIN_EMAIL }
         });
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'Admin Login (Email)',
             passed: false,
             error: error.response?.data?.error || error.message
@@ -119,13 +119,13 @@ async function testAdminLogin() {
             identifier: ADMIN_MOBILE,
             password: ADMIN_PASSWORD
         });
-        logResult({
+        console.log({
             name: 'Admin Login (Mobile)',
             passed: response.status === 200 && !!response.data.token,
             data: { mobile: ADMIN_MOBILE }
         });
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'Admin Login (Mobile)',
             passed: false,
             error: error.response?.data?.error || error.message
@@ -142,7 +142,7 @@ async function testAdminCredentials() {
         );
 
         if (result.rows.length === 0) {
-            logResult({
+            console.log({
                 name: 'Admin Credentials Verification',
                 passed: false,
                 error: 'Admin account not found in database'
@@ -155,7 +155,7 @@ async function testAdminCredentials() {
         const correctMobile = admin.mobile_number === ADMIN_MOBILE;
         const correctRole = admin.role === 'SUPER_ADMIN';
 
-        logResult({
+        console.log({
             name: 'Admin Credentials Verification',
             passed: correctEmail && correctMobile && correctRole,
             data: {
@@ -167,7 +167,7 @@ async function testAdminCredentials() {
 
         return correctEmail && correctMobile && correctRole;
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'Admin Credentials Verification',
             passed: false,
             error: error.message
@@ -180,7 +180,7 @@ async function testAdminCredentials() {
 async function testAdminEndpoints() {
     const token = await getAdminToken();
     if (!token) {
-        logResult({
+        console.log({
             name: 'Admin Endpoints Test',
             passed: false,
             error: 'Could not get admin token'
@@ -193,13 +193,13 @@ async function testAdminEndpoints() {
     // Test stats endpoint
     try {
         const response = await axios.get(`${BASE_URL}/api/stats`, { headers });
-        logResult({
+        console.log({
             name: 'GET /api/stats (Admin)',
             passed: response.status === 200,
             data: response.data
         });
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'GET /api/stats (Admin)',
             passed: false,
             error: error.response?.data?.error || error.message
@@ -209,13 +209,13 @@ async function testAdminEndpoints() {
     // Test doctors list
     try {
         const response = await axios.get(`${BASE_URL}/api/doctors/all`, { headers });
-        logResult({
+        console.log({
             name: 'GET /api/doctors/all',
             passed: response.status === 200,
             data: { count: response.data.length }
         });
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'GET /api/doctors/all',
             passed: false,
             error: error.response?.data?.error || error.message
@@ -225,13 +225,13 @@ async function testAdminEndpoints() {
     // Test workers list
     try {
         const response = await axios.get(`${BASE_URL}/api/workers`, { headers });
-        logResult({
+        console.log({
             name: 'GET /api/workers',
             passed: response.status === 200,
             data: { count: response.data.length }
         });
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'GET /api/workers',
             passed: false,
             error: error.response?.data?.error || error.message
@@ -241,13 +241,13 @@ async function testAdminEndpoints() {
     // Test donors list
     try {
         const response = await axios.get(`${BASE_URL}/api/donors`, { headers });
-        logResult({
+        console.log({
             name: 'GET /api/donors',
             passed: response.status === 200,
             data: { count: response.data.length }
         });
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'GET /api/donors',
             passed: false,
             error: error.response?.data?.error || error.message
@@ -259,7 +259,7 @@ async function testAdminEndpoints() {
 async function testAIIntegration() {
     const token = await getAdminToken();
     if (!token) {
-        logResult({
+        console.log({
             name: 'AI Integration Test',
             passed: false,
             error: 'Could not get admin token'
@@ -272,13 +272,13 @@ async function testAIIntegration() {
     // Test ML Server connectivity
     try {
         const response = await axios.get(`${ML_SERVER_URL}/health`, { timeout: 5000 });
-        logResult({
+        console.log({
             name: 'ML Server Connection',
             passed: response.status === 200,
             data: response.data
         });
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'ML Server Connection',
             passed: false,
             error: 'ML Server not responding (may be offline)'
@@ -291,13 +291,13 @@ async function testAIIntegration() {
             messages: [{ role: 'user', content: 'Hello, test message' }],
             role: 'user'
         });
-        logResult({
+        console.log({
             name: 'POST /api/bot/chat',
             passed: response.status === 200 && !!response.data.response,
             data: { hasResponse: !!response.data.response }
         });
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'POST /api/bot/chat',
             passed: false,
             error: error.response?.data?.error || error.message
@@ -309,13 +309,13 @@ async function testAIIntegration() {
         const response = await axios.post(`${BASE_URL}/api/bot/analyze`, {
             query: 'Analyze system security'
         }, { headers });
-        logResult({
+        console.log({
             name: 'POST /api/bot/analyze',
             passed: response.status === 200,
             data: { hasAnalysis: !!response.data.analysis }
         });
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'POST /api/bot/analyze',
             passed: false,
             error: error.response?.data?.error || error.message
@@ -327,7 +327,7 @@ async function testAIIntegration() {
 async function testDataStorage() {
     const token = await getAdminToken();
     if (!token) {
-        logResult({
+        console.log({
             name: 'Data Storage Test',
             passed: false,
             error: 'Could not get admin token'
@@ -349,7 +349,7 @@ async function testDataStorage() {
         };
 
         const response = await axios.post(`${BASE_URL}/api/donors`, testDonor, { headers });
-        logResult({
+        console.log({
             name: 'POST /api/donors (Data Storage)',
             passed: response.status === 201,
             data: { message: response.data.message }
@@ -358,7 +358,7 @@ async function testDataStorage() {
         // Clean up test data
         await pool.query('DELETE FROM blood_donors WHERE mobile_number = $1', [testDonor.mobileNumber]);
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'POST /api/donors (Data Storage)',
             passed: false,
             error: error.response?.data?.error || error.message
@@ -371,13 +371,13 @@ async function testDataStorage() {
             'SELECT COUNT(*) FROM audit_logs WHERE action = $1',
             ['AI_CHAT']
         );
-        logResult({
+        console.log({
             name: 'Audit Log Storage',
             passed: true,
             data: { aiChatLogs: logResult.rows[0].count }
         });
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'Audit Log Storage',
             passed: false,
             error: error.message
@@ -392,7 +392,7 @@ async function testDoctorLogin() {
         const result = await pool.query('SELECT email FROM doctors WHERE account_status = $1 LIMIT 1', ['ACTIVE']);
         
         if (result.rows.length === 0) {
-            logResult({
+            console.log({
                 name: 'Doctor Login Test',
                 passed: false,
                 error: 'No active doctors found in database'
@@ -401,13 +401,13 @@ async function testDoctorLogin() {
         }
 
         // Note: We can't test actual login without password, but we can verify endpoint exists
-        logResult({
+        console.log({
             name: 'Doctor Login Endpoint Available',
             passed: true,
             data: { doctorEmail: result.rows[0].email }
         });
     } catch (error: any) {
-        logResult({
+        console.log({
             name: 'Doctor Login Test',
             passed: false,
             error: error.message

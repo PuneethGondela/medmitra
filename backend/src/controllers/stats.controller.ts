@@ -58,7 +58,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 // Doctor-specific stats (their own data)
 export const getDoctorStats = async (req: Request, res: Response) => {
     try {
-        // @ts-ignore - user is set by middleware
+
         const doctorId = req.user?.doctorId;
 
         if (!doctorId) {

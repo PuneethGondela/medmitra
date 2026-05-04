@@ -20,7 +20,7 @@ export const getAllDonors = async (req: Request, res: Response) => {
             const donors = snapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
                 .filter(donor => {
-                    const donorCity = (donor.city || '').toLowerCase();
+                    const donorCity = ((donor as any).city || "").toLowerCase();
                     return donorCity.includes(String(city).toLowerCase());
                 });
 
@@ -44,7 +44,7 @@ export const getAllDonors = async (req: Request, res: Response) => {
             const donors = snapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
                 .filter(donor => {
-                    const donorCity = (donor.city || '').toLowerCase();
+                    const donorCity = ((donor as any).city || "").toLowerCase();
                     return donorCity.includes(String(city).toLowerCase());
                 });
 
@@ -97,7 +97,7 @@ export const createDonor = async (req: Request, res: Response) => {
         const donorRef = await adminDb.collection(COLLECTIONS.BLOOD_DONORS).add(donorData);
 
         // Audit Log
-        // @ts-ignore
+
         const adminId = req.user?.adminId;
         if (adminId) {
             await adminDb.collection(COLLECTIONS.AUDIT_LOGS).add({

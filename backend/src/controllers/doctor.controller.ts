@@ -26,6 +26,8 @@ export const loginDoctor = async (req: Request, res: Response) => {
 
         const doctorDoc = snapshot.docs[0];
         const doctor = doctorDoc.data();
+
+        if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
         const doctorId = doctorDoc.id;
 
         // 2. Validate Password
@@ -185,7 +187,7 @@ export const createDoctor = async (req: Request, res: Response) => {
         }
 
         // Audit Log
-        // @ts-ignore
+
         const adminId = req.user?.adminId;
         if (adminId) {
             await adminDb.collection(COLLECTIONS.AUDIT_LOGS).add({
@@ -199,8 +201,8 @@ export const createDoctor = async (req: Request, res: Response) => {
         }
 
         // Don't return password hash
-        // @ts-ignore
-        delete doctorData.password_hash;
+
+        if ("password_hash" in doctorData) delete (doctorData as { password_hash?: string }).password_hash;
 
         res.status(201).json({ message: 'Doctor created', doctor: doctorData, tempPassword: finalPassword });
 
@@ -243,9 +245,9 @@ export const getAllDoctors = async (req: Request, res: Response) => {
 export const getDoctorById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        // @ts-ignore - user is set by middleware
+
         const userId = req.user?.doctorId || req.user?.adminId;
-        // @ts-ignore
+
         const userRole = req.user?.role;
 
         // If doctor accessing, ensure they can only see their own data
@@ -261,13 +263,15 @@ export const getDoctorById = async (req: Request, res: Response) => {
 
         const doctor = doctorDoc.data();
 
+        if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
+
         // Check if deleted
-        if (doctor.deleted_at) {
+        if (doctor && doctor.deleted_at) {
             return res.status(404).json({ error: 'Doctor not found' });
         }
 
         // Don't return password hash
-        delete doctor.password_hash;
+        if (doctor && "password_hash" in doctor) delete (doctor as { password_hash?: string }).password_hash;
 
         if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
         res.json(doctor);
@@ -279,7 +283,7 @@ export const getDoctorById = async (req: Request, res: Response) => {
 
 export const getCurrentDoctor = async (req: Request, res: Response) => {
     try {
-        // @ts-ignore - user is set by middleware
+
         const doctorId = req.user?.doctorId;
 
         if (!doctorId) {
@@ -294,13 +298,15 @@ export const getCurrentDoctor = async (req: Request, res: Response) => {
 
         const doctor = doctorDoc.data();
 
+        if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
+
         // Check if deleted
-        if (doctor.deleted_at) {
+        if (doctor && doctor.deleted_at) {
             return res.status(404).json({ error: 'Doctor not found' });
         }
 
         // Don't return password hash
-        delete doctor.password_hash;
+        if (doctor && "password_hash" in doctor) delete (doctor as { password_hash?: string }).password_hash;
 
         if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
         res.json(doctor);
@@ -322,7 +328,9 @@ export const updateDoctor = async (req: Request, res: Response) => {
         }
 
         const doctor = doctorDoc.data();
-        if (doctor.deleted_at) {
+
+        if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
+        if (doctor && doctor.deleted_at) {
             return res.status(404).json({ error: 'Doctor not found' });
         }
 
@@ -348,10 +356,10 @@ export const updateDoctor = async (req: Request, res: Response) => {
         // Get updated document
         const updatedDoc = await doctorDoc.ref.get();
         const updatedDoctor = updatedDoc.data();
-        delete updatedDoctor.password_hash;
+        if (updatedDoctor && "password_hash" in updatedDoctor) delete (updatedDoctor as { password_hash?: string }).password_hash;
 
         // Audit Log
-        // @ts-ignore
+
         const adminId = req.user?.adminId || req.user?.id;
         if (adminId) {
             await adminDb.collection(COLLECTIONS.AUDIT_LOGS).add({
@@ -373,7 +381,7 @@ export const updateDoctor = async (req: Request, res: Response) => {
 
 export const updateCurrentDoctor = async (req: Request, res: Response) => {
     try {
-        // @ts-ignore - user is set by middleware
+
         const doctorId = req.user?.doctorId;
 
         if (!doctorId) {
@@ -389,7 +397,9 @@ export const updateCurrentDoctor = async (req: Request, res: Response) => {
         }
 
         const doctor = doctorDoc.data();
-        if (doctor.deleted_at) {
+
+        if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
+        if (doctor && doctor.deleted_at) {
             return res.status(404).json({ error: 'Doctor not found' });
         }
 
@@ -412,7 +422,7 @@ export const updateCurrentDoctor = async (req: Request, res: Response) => {
         // Get updated document
         const updatedDoc = await doctorDoc.ref.get();
         const updatedDoctor = updatedDoc.data();
-        delete updatedDoctor.password_hash;
+        if (updatedDoctor && "password_hash" in updatedDoctor) delete (updatedDoctor as { password_hash?: string }).password_hash;
 
         // Audit Log
         await adminDb.collection(COLLECTIONS.AUDIT_LOGS).add({
@@ -449,7 +459,7 @@ export const deleteDoctor = async (req: Request, res: Response) => {
         });
 
         // Audit Log
-        // @ts-ignore
+
         const adminId = req.user?.adminId;
         if (adminId) {
             await adminDb.collection(COLLECTIONS.AUDIT_LOGS).add({

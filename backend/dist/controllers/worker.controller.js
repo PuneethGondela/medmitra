@@ -8,24 +8,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.searchWorkers = exports.getWorkerById = exports.getAllWorkers = void 0;
-const db_1 = __importDefault(require("../config/db"));
+const firebase_1 = require("../config/firebase");
 // Get all workers (Read-Only)
 const getAllWorkers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const result = yield db_1.default.query(`
-      SELECT * FROM workers 
-      ORDER BY joined_at DESC
-    `);
-        res.json(result.rows);
+        const snapshot = yield firebase_1.adminDb.collection(firebase_1.COLLECTIONS.WORKERS)
+            // .where('role', '==', 'worker') // Not needed if in workers collection, unless mixed
+            .orderBy('created_at', 'desc')
+            .get();
+        const workers = snapshot.docs.map(doc => (Object.assign({ id: doc.id }, doc.data())));
+        res.json(workers);
     }
     catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Get all workers error:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 });
 exports.getAllWorkers = getAllWorkers;
@@ -33,17 +31,15 @@ exports.getAllWorkers = getAllWorkers;
 const getWorkerById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const result = yield db_1.default.query('SELECT * FROM workers WHERE worker_id = $1', [id]);
-        if (result.rows.length === 0) {
+        const workerDoc = yield firebase_1.adminDb.collection(firebase_1.COLLECTIONS.WORKERS).doc(id).get();
+        if (!workerDoc.exists) {
             return res.status(404).json({ error: 'Worker not found' });
         }
-        // Fetch stats for this worker later (e.g. number of patients registered)
-        // const stats = await pool.query('...');
-        res.json(result.rows[0]);
+        res.json(Object.assign({ id: workerDoc.id }, workerDoc.data()));
     }
     catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Get worker by ID error:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 });
 exports.getWorkerById = getWorkerById;
@@ -51,16 +47,28 @@ exports.getWorkerById = getWorkerById;
 const searchWorkers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { q } = req.query;
-        if (!q)
+        if (!q) {
             return (0, exports.getAllWorkers)(req, res);
-        const result = yield db_1.default.query(`
-            SELECT * FROM workers 
-            WHERE full_name ILIKE $1 OR mobile_number ILIKE $1 OR assigned_village ILIKE $1
-        `, [`%${q}%`]);
-        res.json(result.rows);
+        }
+        const queryText = q.toLowerCase();
+        const snapshot = yield firebase_1.adminDb.collection(firebase_1.COLLECTIONS.WORKERS)
+            // .where('role', '==', 'worker')
+            .get();
+        // Filter in memory (Firestore doesn't support ILIKE, so we filter client-side)
+        const workers = snapshot.docs
+            .map(doc => {
+            const data = doc.data();
+            return Object.assign({ id: doc.id }, data);
+        })
+            .filter((w) => (w.full_name && w.full_name.toLowerCase().includes(queryText)) ||
+            (w.mobile_number && w.mobile_number.includes(queryText)) ||
+            (w.email && w.email.toLowerCase().includes(queryText)) ||
+            (w.assigned_village && w.assigned_village.toLowerCase().includes(queryText)));
+        res.json(workers);
     }
     catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Search workers error:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 });
 exports.searchWorkers = searchWorkers;

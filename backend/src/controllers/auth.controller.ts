@@ -84,6 +84,8 @@ export const loginAdmin = async (req: Request, res: Response) => {
         }
 
         const admin = adminDoc.data();
+
+        if (!admin) return res.status(404).json({ error: 'Admin not found' });
         const adminId = adminDoc.id;
 
         // 2. Validate Password
@@ -170,12 +172,12 @@ export const createInitialAdmin = async (req: Request, res: Response) => {
 
 export const generate2FA = async (req: Request, res: Response) => {
     try {
-        // @ts-ignore
-        const adminId = req.user.adminId;
+
+        const adminId = req.user?.adminId;
         const secret = authenticator.generateSecret();
 
         // Save temporary secret to Firestore
-        await adminDb.collection(COLLECTIONS.ADMINS).doc(adminId).update({
+        await adminDb.collection(COLLECTIONS.ADMINS).doc(adminId as string).update({
             totp_secret: secret
         });
 
@@ -196,16 +198,18 @@ export const generate2FA = async (req: Request, res: Response) => {
 
 export const verify2FA = async (req: Request, res: Response) => {
     try {
-        // @ts-ignore
-        const adminId = req.user.adminId;
+
+        const adminId = req.user?.adminId;
         const { token } = req.body;
 
-        const adminDoc = await adminDb.collection(COLLECTIONS.ADMINS).doc(adminId).get();
+        const adminDoc = await adminDb.collection(COLLECTIONS.ADMINS).doc(adminId as string).get();
         if (!adminDoc.exists) {
             return res.status(404).json({ error: 'Admin not found' });
         }
 
         const admin = adminDoc.data();
+
+        if (!admin) return res.status(404).json({ error: 'Admin not found' });
         const secret = admin.totp_secret;
 
         if (!secret) {
