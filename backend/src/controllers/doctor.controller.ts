@@ -4,6 +4,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { FieldValue } from 'firebase-admin/firestore';
+import { authenticateDoctor } from '../services/auth.service';
+import { AppError } from '../utils/errors';
 
 // Login Doctor
 export const loginDoctor = async (req: Request, res: Response) => {
@@ -14,77 +16,13 @@ export const loginDoctor = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Email and password required' });
         }
 
-        // 1. Check Doctor in Firestore
-        const snapshot = await adminDb.collection(COLLECTIONS.DOCTORS)
-            .where('email', '==', email)
-            .limit(1)
-            .get();
+        const authResult = await authenticateDoctor(email, password, req.ip);
 
-        if (snapshot.empty) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
-
-        const doctorDoc = snapshot.docs[0];
-        const doctor = doctorDoc.data();
-        const doctorId = doctorDoc.id;
-
-        // 2. Validate Password
-        const valid = await bcrypt.compare(password, doctor.password_hash);
-        if (!valid) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
-
-        // 3. Check Account Status
-        if (doctor.account_status !== 'ACTIVE') {
-            return res.status(403).json({ error: 'Account is not active' });
-        }
-
-        // 4. Generate Token
-        const token = jwt.sign(
-            { doctorId, role: 'doctor', email: doctor.email },
-            process.env.JWT_SECRET as string,
-            { expiresIn: '12h' }
-        );
-
-        // 5. Generate Firebase Custom Token (for frontend SDK)
-        let firebaseToken;
-        try {
-            firebaseToken = await adminAuth.createCustomToken(doctorId, { role: 'doctor' });
-        } catch (ftError) {
-            console.warn("Failed to generate Firebase custom token:", ftError);
-            // Continue without it, but frontend might have issues loading firestore data directly
-        }
-
-        // Audit Log
-        try {
-            await adminDb.collection(COLLECTIONS.AUDIT_LOGS).add({
-                user_id: doctorId,
-                user_type: 'DOCTOR',
-                action: 'LOGIN',
-                details: { ip: req.ip },
-                timestamp: FieldValue.serverTimestamp()
-            });
-        } catch (auditError) {
-            console.warn('Audit log failed (non-critical):', auditError);
-        }
-
-        // Update Last Login
-        await doctorDoc.ref.update({
-            last_login: FieldValue.serverTimestamp()
-        });
-
-        res.json({
-            token,
-            firebaseToken,
-            user: {
-                id: doctorId,
-                name: doctor.full_name,
-                email: doctor.email,
-                role: 'doctor',
-                specialization: doctor.specialization
-            }
-        });
+        res.json(authResult);
     } catch (error: any) {
+        if (error instanceof AppError) {
+            return res.status(error.statusCode).json({ error: error.message });
+        }
         console.error('DOCTOR LOGIN ERROR:', error);
         res.status(500).json({ error: 'Internal server error', details: error.message });
     }
@@ -120,27 +58,18 @@ export const createDoctor = async (req: Request, res: Response) => {
             adminDb.collection(COLLECTIONS.DOCTORS).where('login_username', '==', data.loginUsername).limit(1).get()
         ]);
 
-        if (!emailCheck.empty) {
-            return res.status(400).json({ error: 'Doctor with this email already exists' });
-        }
-        if (!licenseCheck.empty) {
-            return res.status(400).json({ error: 'Doctor with this medical license already exists' });
-        }
-        if (!usernameCheck.empty) {
-            return res.status(400).json({ error: 'Doctor with this username already exists' });
-        }
+        if (!emailCheck.empty) return res.status(400).json({ error: 'Email already registered' });
+        if (!licenseCheck.empty) return res.status(400).json({ error: 'Medical license already registered' });
+        if (!usernameCheck.empty) return res.status(400).json({ error: 'Username already taken' });
 
-        // Generate Doctor ID (DOC_YEAR_###) - Optimized using count aggregation
-        const year = new Date().getFullYear();
-        const doctorsCountSnapshot = await adminDb.collection(COLLECTIONS.DOCTORS).count().get();
-        const count = doctorsCountSnapshot.data().count + 1;
-        const doctorId = `DOC_${year}_${String(count).padStart(3, '0')}`;
+        // Generate strong password if not provided
+        const finalPassword = data.password || Math.random().toString(36).slice(-10) + 'A1!';
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(finalPassword, salt);
 
-        // Use provided password or generate temp
-        const finalPassword = data.password || 'TempPassword2026!';
-        const hash = await bcrypt.hash(finalPassword, 10);
+        // Generate ID
+        const doctorId = `DOC_${Date.now()}`;
 
-        // Create doctor document
         const doctorData = {
             doctor_id: doctorId,
             full_name: data.fullName,
@@ -151,38 +80,21 @@ export const createDoctor = async (req: Request, res: Response) => {
             hospital_name: data.hospitalName,
             hospital_id: data.hospitalId,
             login_username: data.loginUsername,
-            password_hash: hash,
+            password_hash: passwordHash,
             account_status: 'ACTIVE',
-            is_verified: false,
+            created_at: FieldValue.serverTimestamp(),
+            updated_at: FieldValue.serverTimestamp(),
+            last_login: null,
+            deleted_at: null,
+
+            // Permissions
             can_add_visits: data.permissions?.canAddVisits ?? true,
             can_edit_own_visits: data.permissions?.canEditOwnVisits ?? true,
             can_delete_visits: data.permissions?.canDeleteVisits ?? false,
-            can_view_all_workers: data.permissions?.canViewAllWorkers ?? false,
-            created_at: FieldValue.serverTimestamp(),
-            updated_at: FieldValue.serverTimestamp(),
-            deleted_at: null
+            can_view_all_workers: data.permissions?.canViewAllWorkers ?? false
         };
 
-        // Use doctor_id as document ID for easier queries
         await adminDb.collection(COLLECTIONS.DOCTORS).doc(doctorId).set(doctorData);
-
-        // 6. Create User in Firebase Authentication (CRITICAL FIX)
-        try {
-            await adminAuth.createUser({
-                uid: doctorId, // Sync UID with Firestore ID
-                email: data.email,
-                password: finalPassword,
-                displayName: data.fullName,
-                emailVerified: true
-            });
-            console.log(`Created Firebase Auth user for doctor: ${doctorId}`);
-        } catch (authError: any) {
-            console.error('Failed to create Firebase Auth user:', authError);
-            // If user already exists in Auth but not Firestore (edge case), we might want to update or ignore
-            if (authError.code === 'auth/email-already-exists') {
-                console.warn('User already exists in Auth, skipping creation.');
-            }
-        }
 
         // Audit Log
         // @ts-ignore
@@ -262,12 +174,14 @@ export const getDoctorById = async (req: Request, res: Response) => {
         const doctor = doctorDoc.data();
 
         // Check if deleted
-        if (doctor.deleted_at) {
+        if (doctor?.deleted_at) {
             return res.status(404).json({ error: 'Doctor not found' });
         }
 
         // Don't return password hash
-        delete doctor.password_hash;
+        if (doctor) {
+            delete doctor.password_hash;
+        }
 
         if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
         res.json(doctor);
@@ -295,12 +209,14 @@ export const getCurrentDoctor = async (req: Request, res: Response) => {
         const doctor = doctorDoc.data();
 
         // Check if deleted
-        if (doctor.deleted_at) {
+        if (doctor?.deleted_at) {
             return res.status(404).json({ error: 'Doctor not found' });
         }
 
         // Don't return password hash
-        delete doctor.password_hash;
+        if (doctor) {
+            delete doctor.password_hash;
+        }
 
         if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
         res.json(doctor);
@@ -322,7 +238,7 @@ export const updateDoctor = async (req: Request, res: Response) => {
         }
 
         const doctor = doctorDoc.data();
-        if (doctor.deleted_at) {
+        if (doctor?.deleted_at) {
             return res.status(404).json({ error: 'Doctor not found' });
         }
 
@@ -348,7 +264,9 @@ export const updateDoctor = async (req: Request, res: Response) => {
         // Get updated document
         const updatedDoc = await doctorDoc.ref.get();
         const updatedDoctor = updatedDoc.data();
-        delete updatedDoctor.password_hash;
+        if (updatedDoctor) {
+            delete updatedDoctor.password_hash;
+        }
 
         // Audit Log
         // @ts-ignore
@@ -389,7 +307,7 @@ export const updateCurrentDoctor = async (req: Request, res: Response) => {
         }
 
         const doctor = doctorDoc.data();
-        if (doctor.deleted_at) {
+        if (doctor?.deleted_at) {
             return res.status(404).json({ error: 'Doctor not found' });
         }
 
@@ -412,7 +330,9 @@ export const updateCurrentDoctor = async (req: Request, res: Response) => {
         // Get updated document
         const updatedDoc = await doctorDoc.ref.get();
         const updatedDoctor = updatedDoc.data();
-        delete updatedDoctor.password_hash;
+        if (updatedDoctor) {
+            delete updatedDoctor.password_hash;
+        }
 
         // Audit Log
         await adminDb.collection(COLLECTIONS.AUDIT_LOGS).add({
