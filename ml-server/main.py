@@ -75,7 +75,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Med Mitra ML Server", lifespan=lifespan)
 
 @app.post("/api/chat")
-async def chat_endpoint(request: ChatRequest):
+def chat_endpoint(request: ChatRequest):
     global model, tokenizer
     
     if model is None:
@@ -130,7 +130,7 @@ class AdminAnalysisRequest(BaseModel):
     max_tokens: int = 512
 
 @app.post("/api/admin/analyze")
-async def admin_analyze_endpoint(request: AdminAnalysisRequest):
+def admin_analyze_endpoint(request: AdminAnalysisRequest):
     global model, tokenizer
     
     if model is None:
