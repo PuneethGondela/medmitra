@@ -252,7 +252,6 @@ export const analyzeSystem = async (req: Request, res: Response) => {
 
         // 3. Log this interaction (Audit)
         try {
-            // @ts-ignore
             const adminId = req.user?.adminId || 'SYSTEM';
             await adminDb.collection(COLLECTIONS.AUDIT_LOGS).add({
                 user_id: adminId,
@@ -270,7 +269,6 @@ export const analyzeSystem = async (req: Request, res: Response) => {
 
         // Store analysis response
         try {
-            // @ts-ignore
             const adminId = req.user?.adminId || 'SYSTEM';
             await storeAnalysisResponse(adminId, query, analysisText, contextData);
         } catch (storageError) {
@@ -315,12 +313,9 @@ export const chatWithBot = async (req: Request, res: Response) => {
         let contextData: any = null;
         let systemPrompt = '';
 
-        // @ts-ignore
         if (req.user) {
-            // @ts-ignore
             if (req.user.role === 'SUPER_ADMIN' || req.user.adminId) {
                 userRole = 'admin';
-                // @ts-ignore
                 contextData = await getAdminContext();
                 systemPrompt = `You are Med Mitra Security & Analytics AI. Your PRIMARY role is to analyze the LIVE SYSTEM DATA provided below and answer questions about application trends, user statistics, and security status.
 
@@ -334,10 +329,8 @@ Guidelines:
 - If asked "How many doctors?", look at 'stats.totalDoctors'.
 - If asked "Monitor security", summarize the 'security' section.
 - Be concise and professional.`;
-                // @ts-ignore
             } else if (req.user.role === 'doctor' || req.user.doctorId) {
                 userRole = 'doctor';
-                // @ts-ignore
                 contextData = await getDoctorContext(req.user.doctorId);
 
                 const donorList = contextData?.availableDonors?.map((d: any) =>
@@ -454,9 +447,7 @@ When user asks about their health records or visits, you can reference their med
 
         // Store ML response
         try {
-            // @ts-ignore
             const userId = req.user?.adminId || req.user?.doctorId || req.user?.userId;
-            // @ts-ignore
             const userType = req.user?.adminId ? 'ADMIN' : req.user?.doctorId ? 'DOCTOR' : 'USER';
 
             await storeMLResponse({
@@ -470,7 +461,6 @@ When user asks about their health records or visits, you can reference their med
                     endpoint: '/api/bot/chat',
                     temperature: temperature || 0.7,
                     maxTokens: max_tokens || 1024,
-                    // @ts-ignore
                     language: requestedLang || 'en'
                 }
             });

@@ -97,7 +97,6 @@ export const createDonor = async (req: Request, res: Response) => {
         const donorRef = await adminDb.collection(COLLECTIONS.BLOOD_DONORS).add(donorData);
 
         // Audit Log
-        // @ts-ignore
         const adminId = req.user?.adminId;
         if (adminId) {
             await adminDb.collection(COLLECTIONS.AUDIT_LOGS).add({
