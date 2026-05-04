@@ -1,6 +1,6 @@
 // app/api/admin/assign-doctor/route.ts - MIGRATED TO FIREBASE
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,13 +15,13 @@ export async function POST(req: NextRequest) {
     // Verify token using Firebase Admin
     let decodedToken;
     try {
-      decodedToken = await getAdminAuth().verifyIdToken(token);
+      decodedToken = await adminAuth.verifyIdToken(token);
     } catch (error) {
       return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     }
 
     // Check if user is admin
-    const userDoc = await getAdminDb().collection("users").doc(decodedToken.uid).get();
+    const userDoc = await adminDb.collection("users").doc(decodedToken.uid).get();
     const userData = userDoc.data();
 
     if (!userData || userData.role !== "admin") {
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify doctor is trusted
-    const doctorDoc = await getAdminDb().collection("users").doc(doctor_id).get();
+    const doctorDoc = await adminDb.collection("users").doc(doctor_id).get();
     const doctorData = doctorDoc.data();
 
     if (!doctorData || doctorData.role !== "doctor" || !doctorData.trusted) {
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create assignment in Firestore (replacing RPC function)
-    const assignmentRef = await getAdminDb().collection("doctor_assignments").add({
+    const assignmentRef = await adminDb.collection("doctor_assignments").add({
       worker_id,
       doctor_id,
       assigned_by: decodedToken.uid,

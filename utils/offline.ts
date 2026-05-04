@@ -54,19 +54,9 @@ export async function getRecords(workerId: string | null): Promise<any[]> {
         })
       );
 
-      // Update cache with sanitized records (strip sensitive fields)
+      // Update cache
       try {
-        const sanitizedRecords = recordsData.map(record => {
-          const sanitized = { ...record };
-          // Replace full attachment objects with just IDs
-          if ((sanitized as any).attachments) {
-            (sanitized as any).attachments = (sanitized as any).attachments.map((att: any) => att.id);
-          }
-          // Remove doctor info to prevent storing potentially sensitive data
-          delete (sanitized as any).doctor;
-          return sanitized;
-        });
-        localStorage.setItem(cacheKey, JSON.stringify(sanitizedRecords));
+        localStorage.setItem(cacheKey, JSON.stringify(recordsData));
       } catch (e) {
         console.warn("localStorage write failed", e);
       }

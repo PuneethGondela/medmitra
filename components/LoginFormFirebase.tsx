@@ -197,7 +197,7 @@ export default function LoginFormFirebase() {
           name="identifier"
           value={form.identifier}
           onChange={onChange}
-          placeholder="Enter your email or mobile number"
+          placeholder="admin@test.com"
           type="text"
           required
           className="w-full"
@@ -209,7 +209,7 @@ export default function LoginFormFirebase() {
           name="password"
           value={form.password}
           onChange={onChange}
-          placeholder="Enter your password"
+          placeholder="password123"
           type="password"
           required
           className="w-full"

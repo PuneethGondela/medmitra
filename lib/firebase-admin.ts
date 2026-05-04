@@ -5,10 +5,10 @@ import path from 'path';
 import fs from 'fs';
 
 // Initialize Firebase Admin (avoid duplicate initialization)
-let adminApp: admin.app.App | null = null;
-let adminAuth: admin.auth.Auth | null = null;
-let adminDb: admin.firestore.Firestore | null = null;
-let adminStorage: admin.storage.Storage | null = null;
+let adminApp: admin.app.App = null as any;
+let adminAuth: admin.auth.Auth = null as any;
+let adminDb: admin.firestore.Firestore = null as any;
+let adminStorage: admin.storage.Storage = null as any;
 
 try {
   if (admin.apps.length === 0) {
@@ -79,7 +79,6 @@ try {
     adminDb = admin.firestore();
     adminStorage = admin.storage();
   } else {
-    adminApp = admin.apps[0] as admin.app.App;
     adminAuth = admin.auth();
     adminDb = admin.firestore();
     adminStorage = admin.storage();
@@ -91,36 +90,8 @@ try {
   } catch (e) {
     // ignore
   }
-  throw new Error(`Firebase Admin initialization failed: ${error.message}`);
-}
-
-// Defensive getter functions
-export function getAdminApp(): admin.app.App {
-  if (!adminApp) {
-    throw new Error('Firebase Admin App is not initialized. Check initialization errors above.');
-  }
-  return adminApp;
-}
-
-export function getAdminAuth(): admin.auth.Auth {
-  if (!adminAuth) {
-    throw new Error('Firebase Admin Auth is not initialized. Check initialization errors above.');
-  }
-  return adminAuth;
-}
-
-export function getAdminDb(): admin.firestore.Firestore {
-  if (!adminDb) {
-    throw new Error('Firebase Admin Firestore is not initialized. Check initialization errors above.');
-  }
-  return adminDb;
-}
-
-export function getAdminStorage(): admin.storage.Storage {
-  if (!adminStorage) {
-    throw new Error('Firebase Admin Storage is not initialized. Check initialization errors above.');
-  }
-  return adminStorage;
+  // Don't throw, let it fail at usage time so we can return JSON error
+  // throw error;
 }
 
 export { adminAuth, adminDb, adminStorage };
