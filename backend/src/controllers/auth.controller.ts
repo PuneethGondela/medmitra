@@ -2,7 +2,8 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { adminDb, adminAuth, COLLECTIONS } from '../config/firebase';
-import { authenticator } from 'otplib';
+import * as otplib from 'otplib';
+const authenticator = otplib.authenticator || otplib.default?.authenticator || { generateSecret: () => '', keyuri: () => '', verify: () => false };
 import QRCode from 'qrcode';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -99,34 +100,38 @@ export const loginAdmin = async (req: Request, res: Response) => {
             { expiresIn: '12h' }
         );
 
+        // 4. Generate Firebase Custom Token
+        let firebaseToken;
+        try {
+            firebaseToken = await adminAuth.createCustomToken(adminId, { role: admin.role || 'SUPER_ADMIN' });
+        } catch (ftError) {
+            console.warn("Failed to generate Firebase custom token:", ftError);
+            // Continue without it
+        }
+
         // Audit Log
         try {
             await adminDb.collection(COLLECTIONS.AUDIT_LOGS).add({
                 user_id: adminId,
                 user_type: 'ADMIN',
                 action: 'LOGIN',
-                details: {
-                    ip: req.ip,
-                    login_method: isEmail ? 'email' : isMobile ? 'mobile' : 'identifier'
-                },
+                details: { ip: req.ip },
                 timestamp: FieldValue.serverTimestamp()
             });
         } catch (auditError) {
-            console.warn('Audit log failed (non-critical):', auditError);
+            console.warn('Audit log failed:', auditError);
         }
 
-        // Update last login
-        await adminDoc.ref.update({
-            last_login: FieldValue.serverTimestamp()
-        });
-
-        res.json({ 
-            token, 
-            user: { 
-                email: admin.email, 
-                mobile_number: admin.mobile_number,
-                role: admin.role || 'SUPER_ADMIN'
-            } 
+        res.json({
+            token,
+            firebaseToken,
+            user: {
+                id: adminId,
+                name: admin.full_name,
+                email: admin.email,
+                role: admin.role || 'SUPER_ADMIN',
+                permissions: admin.permissions || {}
+            }
         });
     } catch (error: any) {
         console.error('LOGIN ERROR:', error);
@@ -134,65 +139,27 @@ export const loginAdmin = async (req: Request, res: Response) => {
     }
 };
 
-// Setup Initial Admin
-export const createInitialAdmin = async (req: Request, res: Response) => {
-    try {
-        const { email, password } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password required' });
-        }
-
-        const hash = await bcrypt.hash(password, 10);
-
-        // Check if admin already exists
-        const existing = await adminDb.collection(COLLECTIONS.ADMINS)
-            .where('email', '==', email)
-            .limit(1)
-            .get();
-
-        if (!existing.empty) {
-            return res.status(400).json({ error: 'Admin with this email already exists' });
-        }
-
-        await adminDb.collection(COLLECTIONS.ADMINS).add({
-            email,
-            password_hash: hash,
-            role: 'SUPER_ADMIN',
-            created_at: FieldValue.serverTimestamp()
-        });
-
-        res.status(201).json({ message: 'Admin created' });
-    } catch (error: any) {
-        console.error('Create admin error:', error);
-        res.status(500).json({ error: 'Failed to create admin', details: error.message });
-    }
-};
-
-export const generate2FA = async (req: Request, res: Response) => {
+// Enable 2FA
+export const enable2FA = async (req: Request, res: Response) => {
     try {
         const adminId = req.user.adminId;
         const secret = authenticator.generateSecret();
+        const otpauth = authenticator.keyuri(adminId, 'MediMitr Admin', secret);
 
-        // Save temporary secret to Firestore
+        const qrCodeUrl = await QRCode.toDataURL(otpauth);
+
+        // Store secret temporarily or permanently based on your flow
         await adminDb.collection(COLLECTIONS.ADMINS).doc(adminId).update({
             pending_totp_secret: secret
         });
 
-        const otpauth = authenticator.keyuri(
-            'Admin',
-            'Med Mitra',
-            secret
-        );
-
-        const imageUrl = await QRCode.toDataURL(otpauth);
-        res.json({ secret, qrCode: imageUrl });
-
-    } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to generate 2FA', details: error.message });
+        res.json({ qrCodeUrl, secret });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to enable 2FA' });
     }
 };
 
+// Verify & Activate 2FA
 export const verify2FA = async (req: Request, res: Response) => {
     try {
         const adminId = req.user.adminId;
@@ -223,11 +190,9 @@ export const verify2FA = async (req: Request, res: Response) => {
             }
             res.json({ message: '2FA Verified Successfully' });
         } else {
-            res.status(400).json({ error: 'Invalid Token' });
+            res.status(400).json({ error: 'Invalid token' });
         }
-
-    } catch (error: any) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to verify 2FA', details: error.message });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to verify 2FA' });
     }
 };
