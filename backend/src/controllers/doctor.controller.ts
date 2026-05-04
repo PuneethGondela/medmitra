@@ -86,7 +86,7 @@ export const loginDoctor = async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('DOCTOR LOGIN ERROR:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 };
 
@@ -178,29 +178,9 @@ export const createDoctor = async (req: Request, res: Response) => {
             console.log(`Created Firebase Auth user for doctor: ${doctorId}`);
         } catch (authError: any) {
             console.error('Failed to create Firebase Auth user:', authError);
-            // If user already exists in Auth but not Firestore (edge case), we delete and recreate to sync UID
+            // If user already exists in Auth but not Firestore (edge case), we might want to update or ignore
             if (authError.code === 'auth/email-already-exists') {
-                console.warn('User already exists in Auth, deleting and recreating to sync UID.');
-                try {
-                    const existingUser = await adminAuth.getUserByEmail(data.email);
-                    await adminAuth.deleteUser(existingUser.uid);
-                    await adminAuth.createUser({
-                        uid: doctorId, // Sync UID with Firestore ID
-                        email: data.email,
-                        password: finalPassword,
-                        displayName: data.fullName,
-                        emailVerified: true
-                    });
-                    console.log(`Recreated Firebase Auth user for doctor: ${doctorId}`);
-                } catch (recreateError) {
-                    // Rollback Firestore doc on recreate failure
-                    await adminDb.collection(COLLECTIONS.DOCTORS).doc(doctorId).delete();
-                    throw recreateError;
-                }
-            } else {
-                // Rollback Firestore doc on other auth failures
-                await adminDb.collection(COLLECTIONS.DOCTORS).doc(doctorId).delete();
-                throw authError;
+                console.warn('User already exists in Auth, skipping creation.');
             }
         }
 
@@ -227,14 +207,14 @@ export const createDoctor = async (req: Request, res: Response) => {
             return res.status(400).json({ error: error.errors });
         }
         console.error('Create doctor error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 };
 
 export const getAllDoctors = async (req: Request, res: Response) => {
     try {
         const snapshot = await adminDb.collection(COLLECTIONS.DOCTORS)
-            .where('deleted_at', '==', null)
+            // .where('deleted_at', '==', null) // Relaxed for debug visibility
             .orderBy('created_at', 'desc')
             .get();
 
@@ -254,7 +234,7 @@ export const getAllDoctors = async (req: Request, res: Response) => {
         res.json(doctors);
     } catch (error: any) {
         console.error('Get all doctors error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 };
 
@@ -278,19 +258,18 @@ export const getDoctorById = async (req: Request, res: Response) => {
         const doctor = doctorDoc.data();
 
         // Check if deleted
-        if (!doctor || doctor.deleted_at) {
+        if (doctor.deleted_at) {
             return res.status(404).json({ error: 'Doctor not found' });
         }
 
         // Don't return password hash
         delete (doctor as any).password_hash;
-        if (doctor) delete doctor.password_hash;
 
         if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
         res.json(doctor);
     } catch (error: any) {
         console.error('Get doctor by ID error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 };
 
@@ -311,19 +290,18 @@ export const getCurrentDoctor = async (req: Request, res: Response) => {
         const doctor = doctorDoc.data();
 
         // Check if deleted
-        if (!doctor || doctor.deleted_at) {
+        if (doctor.deleted_at) {
             return res.status(404).json({ error: 'Doctor not found' });
         }
 
         // Don't return password hash
         delete (doctor as any).password_hash;
-        if (doctor) delete doctor.password_hash;
 
         if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
         res.json(doctor);
     } catch (error: any) {
         console.error('Get current doctor error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 };
 
@@ -339,7 +317,7 @@ export const updateDoctor = async (req: Request, res: Response) => {
         }
 
         const doctor = doctorDoc.data();
-        if (!doctor || doctor.deleted_at) {
+        if (doctor.deleted_at) {
             return res.status(404).json({ error: 'Doctor not found' });
         }
 
@@ -366,9 +344,6 @@ export const updateDoctor = async (req: Request, res: Response) => {
         const updatedDoc = await doctorDoc.ref.get();
         const updatedDoctor = updatedDoc.data();
         delete (updatedDoctor as any).password_hash;
-        if (updatedDoctor) {
-            delete updatedDoctor.password_hash;
-        }
 
         // Audit Log
         const adminId = req.user?.adminId || req.user?.id;
@@ -386,7 +361,7 @@ export const updateDoctor = async (req: Request, res: Response) => {
         res.json({ message: 'Doctor updated', doctor: updatedDoctor });
     } catch (error: any) {
         console.error('Update doctor error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 };
 
@@ -407,7 +382,7 @@ export const updateCurrentDoctor = async (req: Request, res: Response) => {
         }
 
         const doctor = doctorDoc.data();
-        if (!doctor || doctor.deleted_at) {
+        if (doctor.deleted_at) {
             return res.status(404).json({ error: 'Doctor not found' });
         }
 
@@ -431,9 +406,6 @@ export const updateCurrentDoctor = async (req: Request, res: Response) => {
         const updatedDoc = await doctorDoc.ref.get();
         const updatedDoctor = updatedDoc.data();
         delete (updatedDoctor as any).password_hash;
-        if (updatedDoctor) {
-            delete updatedDoctor.password_hash;
-        }
 
         // Audit Log
         await adminDb.collection(COLLECTIONS.AUDIT_LOGS).add({
@@ -448,7 +420,7 @@ export const updateCurrentDoctor = async (req: Request, res: Response) => {
         res.json({ message: 'Profile updated', doctor: updatedDoctor });
     } catch (error: any) {
         console.error('Update current doctor error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 };
 
@@ -485,6 +457,6 @@ export const deleteDoctor = async (req: Request, res: Response) => {
         res.json({ message: 'Doctor deleted successfully' });
     } catch (error: any) {
         console.error('Delete doctor error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 };

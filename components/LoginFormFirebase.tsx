@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import { auth, db } from "../lib/firebase";
 import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, query, collection, where, getDocs, limit } from "firebase/firestore";
+import { doc, getDoc, query, collection, where, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import FormInput from "@/components/FormInput";
 import { Button } from "@/components/ui/button";

@@ -14,23 +14,31 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const db_1 = __importDefault(require("./config/db"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const reset = () => __awaiter(void 0, void 0, void 0, function* () {
+const seedAdmin = () => __awaiter(void 0, void 0, void 0, function* () {
+    const email = 'admin@medimitr.com';
+    const password = 'admin123';
     try {
-        const password = 'Doctor@123';
-        const hash = yield bcrypt_1.default.hash(password, 10);
-        // Update if exists, or insert if not (covering all bases)
-        const res = yield db_1.default.query(`
-            INSERT INTO doctors (doctor_id, full_name, email, mobile_number, medical_license, specialization, hospital_name, hospital_id, login_username, password_hash, account_status)
-            VALUES ('DOC_FORCE_RECOVERY', 'Recovery Doc', 'doctor@gmail.com', '9999999999', 'LIC-REC', 'General', 'General Hosp', 'HOSP-GEN', 'recovery.doc', $1, 'ACTIVE')
-            ON CONFLICT (email)
-            DO UPDATE SET password_hash = $1, account_status = 'ACTIVE';
-        `, [hash]);
-        console.log('Password for doctor@gmail.com reset to Doctor@123');
+        console.log(`Seeding admin user: ${email}`);
+        // Hash password
+        const salt = yield bcrypt_1.default.genSalt(10);
+        const hash = yield bcrypt_1.default.hash(password, salt);
+        // Check if admin exists
+        const result = yield db_1.default.query('SELECT * FROM admins WHERE email = $1', [email]);
+        if (result.rows.length > 0) {
+            // Update existing
+            yield db_1.default.query('UPDATE admins SET password_hash = $1 WHERE email = $2', [hash, email]);
+            console.log('Existing admin password updated.');
+        }
+        else {
+            // Insert new
+            yield db_1.default.query('INSERT INTO admins (email, password_hash, role) VALUES ($1, $2, $3)', [email, hash, 'SUPER_ADMIN']);
+            console.log('New admin user created.');
+        }
         process.exit(0);
     }
     catch (err) {
-        console.error(err);
+        console.error('Error seeding admin:', err);
         process.exit(1);
     }
 });
-reset();
+seedAdmin();

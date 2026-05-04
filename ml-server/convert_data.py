@@ -17,7 +17,7 @@ def format_symptom_row(row):
     """
     disease = row['Disease']
     # Collect all symptoms that are strings and not empty/NaN
-    symptoms = [str(row[col]).strip() for col in row.keys() if col.startswith('Symptom_') and pd.notna(row[col]) and str(row[col]).strip() != '']
+    symptoms = [str(row[col]).strip() for col in row.index if col.startswith('Symptom_') and pd.notna(row[col]) and str(row[col]).strip() != '']
     
     if not symptoms:
         return None
@@ -62,8 +62,8 @@ def main():
     try:
         df_sym = pd.read_csv(DATASET_SYMPTOMS)
         print(f"Found {len(df_sym)} symptom records.")
-        for row in df_sym.itertuples(index=False):
-            item = format_symptom_row(row._asdict())
+        for _, row in df_sym.iterrows():
+            item = format_symptom_row(row)
             if item:
                 all_data.append(item)
     except Exception as e:
@@ -76,8 +76,8 @@ def main():
         chunk_size = 1000
         total_rows = 0
         for chunk in pd.read_csv(DATASET_CHATBOT, chunksize=chunk_size):
-            for row in chunk.itertuples(index=False):
-                item = format_chatbot_row(row._asdict())
+            for _, row in chunk.iterrows():
+                item = format_chatbot_row(row)
                 if item:
                     all_data.append(item)
             total_rows += len(chunk)

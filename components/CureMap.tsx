@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { HealthPlan, getHealthPlan } from "../lib/health-plan-service";
 import { Loader2, Calendar, Utensils, Activity, ShieldAlert, Sparkles } from "lucide-react";
 import { useTranslation } from "@/app/providers";
@@ -18,7 +18,33 @@ export default function CureMap({ userId, recordId, diagnosis, language = "en-IN
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-const handleGenerate = useCallback(async () => {
+    // Initial Fetch
+    useEffect(() => {
+        let mounted = true;
+        async function fetchPlan() {
+            setLoading(true);
+            try {
+                const existingPlan = await getHealthPlan(userId, recordId);
+                if (mounted) {
+                    setPlan(existingPlan as HealthPlan);
+
+                    // Auto-generate if not found and diagnosis implies need (e.g. Pregnancy, or just always for new system)
+                    // For this sprint: Auto-generate if missing.
+                    if (!existingPlan && recordId && !generating) {
+                        handleGenerate();
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading health plan:", err);
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        }
+        fetchPlan();
+        return () => { mounted = false; };
+    }, [userId, recordId]);
+
+    const handleGenerate = async () => {
         if (generating) return;
         setGenerating(true);
         setError(null);
@@ -53,35 +79,7 @@ const handleGenerate = useCallback(async () => {
         } finally {
             setGenerating(false);
         }
-    }, [generating, userId, recordId, language]);
-
-    // Initial Fetch
-    useEffect(() => {
-        let mounted = true;
-        async function fetchPlan() {
-            setLoading(true);
-            try {
-                const existingPlan = await getHealthPlan(userId, recordId);
-                if (mounted) {
-                    setPlan(existingPlan as HealthPlan);
-
-                    // Auto-generate if not found and diagnosis implies need (e.g. Pregnancy, or just always for new system)
-                    // For this sprint: Auto-generate if missing.
-                    if (!existingPlan && recordId && !generating) {
-                        handleGenerate();
-                    }
-                }
-            } catch (err) {
-                console.error("Error loading health plan:", err);
-            } finally {
-                if (mounted) setLoading(false);
-            }
-        }
-        fetchPlan();
-        return () => { mounted = false; };
-    }, [userId, recordId, generating, handleGenerate]);
-
-
+    };
 
     if (loading && !plan) {
         return (

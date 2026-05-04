@@ -30,7 +30,7 @@ export default function WorkerProfilePage() {
       setUserId(uid);
 
       if (uid) {
-        const data: any = await getDocument("users", uid);
+        const data = await getDocument("users", uid);
 
         if (data) {
           setProfile({

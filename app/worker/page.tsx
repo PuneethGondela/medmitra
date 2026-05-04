@@ -92,7 +92,7 @@ export default function WorkerDashboard() {
     };
     loadData();
     return () => { isMounted = false; };
-  }, [setLocale]);
+  }, []); // Removed dependency to prevent re-fetch loops
 
   const refresh = async () => {
     if (!userId) return;

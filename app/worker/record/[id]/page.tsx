@@ -1,7 +1,6 @@
 // app/worker/record/[id]/page.tsx - MIGRATED TO FIREBASE
 "use client";
 
-import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { getDocument, queryCollection } from "../../../../lib/firebase-helpers";
 import { speakHealthRecord } from "../../../../utils/voice";
@@ -97,10 +96,10 @@ export default function RecordPage({ params }: { params: { id: string } }) {
                 {/* Thumbnail/Icon */}
                 <div className="relative h-48 bg-gray-100 flex items-center justify-center">
                   {isImage ? (
-                    <Image fill
+                    <img
                       src={a.file_url}
                       alt={a.description || "Attachment"}
-                      className="object-cover"
+                      className="w-full h-full object-cover"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = "none";
                         (e.target as HTMLImageElement).nextElementSibling?.classList.remove("hidden");

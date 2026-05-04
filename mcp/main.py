@@ -26,36 +26,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # --- Data Models ---
 class TranslationRequest(BaseModel):
     text: str
     target_language: str
 
-
 class SpeakRequest(BaseModel):
     text: str
-
 
 class PredictRequest(BaseModel):
     symptoms: dict
 
-
 from typing import Optional, List, Dict
-
 
 class ChatRequest(BaseModel):
     message: str
     worker_name: str = "Anonymous"
     occupation: Optional[str] = None
     age: Optional[int] = None
-    gender: Optional[str] = None  # New Field
+    gender: Optional[str] = None # New Field
     is_pregnant: bool = False
     due_date: Optional[str] = None
-    mother_tongue: str = "English"  # Default
+    mother_tongue: str = "English" # Default
     history: list = []
-    messages: Optional[List[Dict[str, str]]] = None  # Validation: Full history support
-
+    messages: Optional[List[Dict[str, str]]] = None # Validation: Full history support
 
 # --- Initialize Local Modules ---
 print("Initializing Local AI Modules...")
@@ -75,30 +69,24 @@ model_loading_error = None
 print("Attempting to load Local LLM...")
 try:
     if torch.cuda.is_available():
-        print(
-            f"GPU Detected: {torch.cuda.get_device_name(0)}. Loading Qwen2-1.5B (GPU)..."
-        )
+        print(f"GPU Detected: {torch.cuda.get_device_name(0)}. Loading Qwen2-1.5B (GPU)...")
 
         # Load directly with AutoModel (Standard FP16)
-        local_tokenizer = AutoTokenizer.from_pretrained(
-            LOCAL_MODEL_NAME, trust_remote_code=False
-        )
+        local_tokenizer = AutoTokenizer.from_pretrained(LOCAL_MODEL_NAME, trust_remote_code=False)
         local_model = AutoModelForCausalLM.from_pretrained(
             LOCAL_MODEL_NAME,
             device_map="auto",
             torch_dtype=torch.float16,
-            trust_remote_code=False,
+            trust_remote_code=False
         )
     else:
         print("No GPU detected. Loading Qwen2-1.5B on CPU (This might be slower)...")
-        local_tokenizer = AutoTokenizer.from_pretrained(
-            LOCAL_MODEL_NAME, trust_remote_code=False
-        )
+        local_tokenizer = AutoTokenizer.from_pretrained(LOCAL_MODEL_NAME, trust_remote_code=False)
         local_model = AutoModelForCausalLM.from_pretrained(
             LOCAL_MODEL_NAME,
             device_map="cpu",
             torch_dtype=torch.float32,
-            trust_remote_code=False,
+            trust_remote_code=False
         )
 
     print("Qwen2-1.5B Loaded Successfully!")
@@ -109,7 +97,6 @@ except Exception as e:
 
 # --- Endpoints ---
 
-
 @app.get("/")
 def read_root():
     gpu_status = "Available" if torch.cuda.is_available() else "Not Available"
@@ -119,32 +106,22 @@ def read_root():
         "models": {
             "tts": "pyttsx3 (Offline)",
             "prediction": "RandomForest (sklearn)",
-            "chat": (
-                LOCAL_MODEL_NAME
-                if local_model
-                else f"Gemini (Fallback) - Local Load Error: {model_loading_error}"
-            ),
-        },
+            "chat": LOCAL_MODEL_NAME if local_model else f"Gemini (Fallback) - Local Load Error: {model_loading_error}"
+        }
     }
-
 
 @app.post("/speak")
 def speak_text(request: SpeakRequest):
     try:
         success = tts.speak(request.text)
-        return {
-            "status": "success" if success else "failed",
-            "message": f"Spoke: {request.text}",
-        }
+        return {"status": "success" if success else "failed", "message": f"Spoke: {request.text}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.post("/predict")
 def predict_disease(request: PredictRequest):
     result = predictor.predict(request.symptoms)
     return {"prediction": result}
-
 
 @app.post("/chat")
 def chat_bot(request: ChatRequest):
@@ -157,13 +134,9 @@ def chat_bot(request: ChatRequest):
     # --- Database Integration (Sync) ---
     try:
         worker_id = database.get_or_create_worker(
-            request.worker_name,
-            request.occupation,
-            request.age,
-            request.is_pregnant,
-            request.due_date,
-            request.mother_tongue,
-            request.gender,
+            request.worker_name, request.occupation, request.age,
+            request.is_pregnant, request.due_date, request.mother_tongue,
+            request.gender
         )
         database.save_chat_message(worker_id, "user", user_msg)
     except Exception:
@@ -182,14 +155,12 @@ def chat_bot(request: ChatRequest):
                     print(f"✅ Input Translated: '{user_msg}' -> '{english_input}'")
                     user_msg = english_input
                 else:
-                    print(
-                        f"❌ Input Translation FAILED. Raw text '{user_msg}' would cause hallucinations."
-                    )
+                    print(f"❌ Input Translation FAILED. Raw text '{user_msg}' would cause hallucinations.")
                     # FALLBACK: Do not send raw Telugu to Qwen.
                     # Send a prompt telling Qwen to ask for English.
                     user_msg = "The user spoke in a language I could not translate. Please politely ask them to speak in English."
                     # Also set a flag to avoid translating the output logic blindly
-                    worker_lang = "English"  # Force output to be English since we failed to parse input
+                    worker_lang = "English" # Force output to be English since we failed to parse input
 
             # Logic Prompt (English)
             if request.messages:
@@ -198,24 +169,15 @@ def chat_bot(request: ChatRequest):
             else:
                 # Fallback: Construct default
                 messages = [
-                    {
-                        "role": "system",
-                        "content": "You are Med Mitra. Analyze symptoms and provide safe medical advice in simple English.",
-                    },
-                    {"role": "user", "content": user_msg},
+                    {"role": "system", "content": "You are Med Mitra. Analyze symptoms and provide safe medical advice in simple English."},
+                    {"role": "user", "content": user_msg}
                 ]
 
-            prompt = local_tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=True
-            )
+            prompt = local_tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
             inputs = local_tokenizer(prompt, return_tensors="pt").to(local_model.device)
 
-            outputs = local_model.generate(
-                **inputs, max_new_tokens=400, temperature=0.7, do_sample=True
-            )
-            response_text = local_tokenizer.decode(
-                outputs[0][inputs.input_ids.shape[1] :], skip_special_tokens=True
-            ).strip()
+            outputs = local_model.generate(**inputs, max_new_tokens=400, temperature=0.7, do_sample=True)
+            response_text = local_tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True).strip()
 
             final_response = response_text
             model_info = "Local GPU + Local NLLB"
@@ -241,23 +203,18 @@ def chat_bot(request: ChatRequest):
 
     # --- 2. Fallback to Gemini ---
     import google.generativeai as genai
-
     api_key = os.getenv("GEMINI_API_KEY")
     if api_key:
         try:
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-2.0-flash-exp")
+            model = genai.GenerativeModel('gemini-2.0-flash-exp')
 
             # Inject System Prompt logic for Gemini too if needed
-            system_instruction = (
-                "You are Med Mitra. Focus on Worker Safety and Ancient Remedies."
-            )
+            system_instruction = "You are Med Mitra. Focus on Worker Safety and Ancient Remedies."
             if request.is_pregnant:
                 system_instruction += " Worker is PREGNANT. create Safe Motherhood Plan, Doctor Visits, Alerts."
 
-            model = genai.GenerativeModel(
-                "gemini-2.0-flash-exp", system_instruction=system_instruction
-            )
+            model = genai.GenerativeModel('gemini-2.0-flash-exp', system_instruction=system_instruction)
             chat = model.start_chat(history=[])
             response = chat.send_message(user_msg)
 
@@ -266,16 +223,9 @@ def chat_bot(request: ChatRequest):
 
             return {"response": response.text, "model": "Gemini (Cloud)"}
         except Exception as e:
-            return {
-                "response": f"System Error. Gemini: {str(e)} | Local Model: {local_error_msg}",
-                "model": "Error",
-            }
+            return {"response": f"System Error. Gemini: {str(e)} | Local Model: {local_error_msg}", "model": "Error"}
 
-    return {
-        "response": f"Local model unavailable ({local_error_msg}) and no API key found.",
-        "model": "None",
-    }
-
+    return {"response": f"Local model unavailable ({local_error_msg}) and no API key found.", "model": "None"}
 
 # --- Initialize Local Translation Model (CPU) ---
 TRANSLATION_MODEL_NAME = "facebook/nllb-200-distilled-600M"
@@ -285,32 +235,20 @@ translation_model = None
 try:
     print(f"Loading Translation Model ({TRANSLATION_MODEL_NAME}) on CPU...")
     from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
-
-    translation_tokenizer = AutoTokenizer.from_pretrained(
-        TRANSLATION_MODEL_NAME, use_safetensors=True
-    )
-    translation_model = AutoModelForSeq2SeqLM.from_pretrained(
-        TRANSLATION_MODEL_NAME, use_safetensors=True
-    )
+    translation_tokenizer = AutoTokenizer.from_pretrained(TRANSLATION_MODEL_NAME, use_safetensors=True)
+    translation_model = AutoModelForSeq2SeqLM.from_pretrained(TRANSLATION_MODEL_NAME, use_safetensors=True)
     print("✅ Translation Model Loaded!")
 except Exception as e:
     print(f"⚠️ Translation Model Load Failed: {e}")
     # Fallback to bin if safetensors missing (will likely fail again due to torch policy, but worth try)
     try:
         if "safetensors" in str(e):
-            print(
-                "Retrying with use_safetensors=False (May fail due to Torch Security)..."
-            )
-            translation_model = AutoModelForSeq2SeqLM.from_pretrained(
-                TRANSLATION_MODEL_NAME, use_safetensors=False
-            )
+            print("Retrying with use_safetensors=False (May fail due to Torch Security)...")
+            translation_model = AutoModelForSeq2SeqLM.from_pretrained(TRANSLATION_MODEL_NAME, use_safetensors=False)
     except:
         pass
 
-
-def perform_translation(
-    text: str, target_language_name: str, source_language_name: str = "English"
-):
+def perform_translation(text: str, target_language_name: str, source_language_name: str = "English"):
     if not translation_model or not translation_tokenizer:
         print("⚠️ Translation Model not loaded.")
         return None
@@ -325,22 +263,19 @@ def perform_translation(
         "marathi": "mar_Deva",
         "spanish": "spa_Latn",
         "french": "fra_Latn",
-        "english": "eng_Latn",
+        "english": "eng_Latn"
     }
 
     tgt_code = lang_map.get(target_language_name.strip().lower())
     if not tgt_code:
-        if target_language_name.lower() == "english":
-            tgt_code = "eng_Latn"
+        if target_language_name.lower() == "english": tgt_code = "eng_Latn"
         else:
             print(f"⚠️ Target Lang '{target_language_name}' not found in map.")
             return None
 
     src_code = lang_map.get(source_language_name.strip().lower(), "eng_Latn")
 
-    print(
-        f"🌍 Translating: '{text[:20]}...' | {source_language_name}({src_code}) -> {target_language_name}({tgt_code})"
-    )
+    print(f"🌍 Translating: '{text[:20]}...' | {source_language_name}({src_code}) -> {target_language_name}({tgt_code})")
 
     try:
         # Tokenize
@@ -350,31 +285,26 @@ def perform_translation(
         translated_tokens = translation_model.generate(
             **inputs,
             forced_bos_token_id=translation_tokenizer.convert_tokens_to_ids(tgt_code),
-            max_length=512,
+            max_length=512
         )
 
-        result = translation_tokenizer.batch_decode(
-            translated_tokens, skip_special_tokens=True
-        )[0]
+        result = translation_tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)[0]
         # print(f"   -> Result: {result[:20]}...")
         return result
     except Exception as e:
         print(f"❌ NLLB Inference Error: {e}")
         return None
 
-
 @app.post("/translate")
-def translate_text(request: TranslationRequest):
+async def translate_text(request: TranslationRequest):
     result = perform_translation(request.text, request.target_language)
     if result:
         return {"translated_text": result, "target_language": request.target_language}
     return {"error": "Local translation unavailable."}
 
-
 from fastapi import File, UploadFile
 import io
 from PIL import Image
-
 
 @app.post("/analyze_image")
 async def analyze_image(file: UploadFile = File(...)):
@@ -389,7 +319,7 @@ async def analyze_image(file: UploadFile = File(...)):
         image = Image.open(io.BytesIO(contents))
 
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel('gemini-1.5-flash')
 
         prompt = "Analyze this medical image (Scan/X-Ray/Skin). Describe findings clearly for a doctor."
         response = model.generate_content([prompt, image])
@@ -398,10 +328,8 @@ async def analyze_image(file: UploadFile = File(...)):
     except Exception as e:
         return {"error": str(e)}
 
-
 # --- Compatibility Models (Med Mitra App Support) ---
 from typing import List, Dict, Any
-
 
 class StandardChatRequest(BaseModel):
     messages: List[Dict[str, str]]
@@ -409,40 +337,33 @@ class StandardChatRequest(BaseModel):
     temperature: float = 0.7
     role: Optional[str] = "user"
 
-
 class StandardTTSRequest(BaseModel):
     text: str
     language: str = "en"
-
 
 class StandardTranslationRequest(BaseModel):
     text: str
     src_lang: str
     tgt_lang: str
 
-
 class AdminAnalysisRequest(BaseModel):
     query: str
     context_data: Dict[str, Any]
     max_tokens: int = 512
 
-
 # --- Compatibility Endpoints ---
-
 
 @app.post("/api/chat")
 def api_chat_bot(request: StandardChatRequest):
     # Adapter: Extract last user message and call logic
-    last_msg = next(
-        (m["content"] for m in reversed(request.messages) if m["role"] == "user"), ""
-    )
+    last_msg = next((m["content"] for m in reversed(request.messages) if m["role"] == "user"), "")
 
     # Create internal request with defaults
     internal_req = ChatRequest(
         message=last_msg,
         worker_name="AppUser",
         temperature=request.temperature,
-        messages=request.messages,  # Pass full history with context
+        messages=request.messages # Pass full history with context
     )
 
     # We can reuse chat_bot logic or call Qwen directly.
@@ -451,27 +372,21 @@ def api_chat_bot(request: StandardChatRequest):
 
     response_data = chat_bot(internal_req)
     if isinstance(response_data, dict):
-        return {
-            "response": response_data.get("response", ""),
-            "model": response_data.get("model", ""),
-        }
+        return {"response": response_data.get("response", ""), "model": response_data.get("model", "")}
     return response_data
-
 
 @app.post("/api/tts")
 def api_speak_text(request: StandardTTSRequest):
     # Adapter
     return speak_text(SpeakRequest(text=request.text))
 
-
 @app.post("/api/translate")
-def api_translate_text(request: StandardTranslationRequest):
+async def api_translate_text(request: StandardTranslationRequest):
     # Adapter
     result = perform_translation(request.text, request.tgt_lang, request.src_lang)
     if result:
         return {"translated_text": result}
     return {"error": "Local translation unavailable."}
-
 
 @app.post("/api/admin/analyze")
 async def api_admin_analyze(request: AdminAnalysisRequest):
@@ -489,33 +404,22 @@ async def api_admin_analyze(request: AdminAnalysisRequest):
 
     messages = [
         {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt},
+        {"role": "user", "content": user_prompt}
     ]
 
     try:
-        prompt = local_tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
-        )
+        prompt = local_tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         inputs = local_tokenizer(prompt, return_tensors="pt").to(local_model.device)
 
-        outputs = local_model.generate(
-            **inputs,
-            max_new_tokens=request.max_tokens or 400,
-            temperature=0.5,
-            do_sample=True,
-        )
-        response_text = local_tokenizer.decode(
-            outputs[0][inputs.input_ids.shape[1] :], skip_special_tokens=True
-        ).strip()
+        outputs = local_model.generate(**inputs, max_new_tokens=request.max_tokens or 400, temperature=0.5, do_sample=True)
+        response_text = local_tokenizer.decode(outputs[0][inputs.input_ids.shape[1]:], skip_special_tokens=True).strip()
 
         return {"response": response_text}
     except Exception as e:
         print(f"Admin Analyze Error: {e}")
         return {"response": f"Error during analysis: {str(e)}"}
 
-
 if __name__ == "__main__":
     import uvicorn
-
     # Listen on all interfaces
     uvicorn.run(app, host="0.0.0.0", port=8000)
