@@ -26,7 +26,7 @@ export async function getRecords(workerId: string | null): Promise<any[]> {
       const recordsData = await Promise.all(
         recordsSnapshot.docs.map(async (doc) => {
           const record = { id: doc.id, ...doc.data() };
-          
+
           // Get attachments
           const attachmentsQuery = query(
             collection(db, "attachments"),
@@ -41,7 +41,7 @@ export async function getRecords(workerId: string | null): Promise<any[]> {
           // Get doctor info if available
           if ((record as any).doctor_id) {
             try {
-              const doctorDoc = await import("@/lib/firebase-helpers").then(m => 
+              const doctorDoc = await import("@/lib/firebase-helpers").then(m =>
                 m.getDocument("users", (record as any).doctor_id)
               );
               (record as any).doctor = doctorDoc ? { name: (doctorDoc as any).name } : null;

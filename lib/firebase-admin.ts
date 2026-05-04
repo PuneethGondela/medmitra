@@ -91,7 +91,7 @@ try {
     // ignore
   }
   // Don't throw, let it fail at usage time so we can return JSON error
-  // throw error; 
+  // throw error;
 }
 
 export { adminAuth, adminDb, adminStorage };
