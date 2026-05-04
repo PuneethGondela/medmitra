@@ -83,7 +83,7 @@ export const loginAdmin = async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        const admin = adminDoc.data();
+        const admin = adminDoc.data() || {};
         const adminId = adminDoc.id;
 
         // 2. Validate Password
@@ -175,7 +175,7 @@ export const generate2FA = async (req: Request, res: Response) => {
 
         // Save temporary secret to Firestore
         await adminDb.collection(COLLECTIONS.ADMINS).doc(adminId).update({
-            totp_secret: secret
+            pending_totp_secret: secret
         });
 
         const otpauth = authenticator.keyuri(
@@ -203,8 +203,9 @@ export const verify2FA = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Admin not found' });
         }
 
-        const admin = adminDoc.data();
-        const secret = admin.totp_secret;
+        const admin = adminDoc.data() || {};
+        const isPending = !!admin.pending_totp_secret;
+        const secret = isPending ? admin.pending_totp_secret : admin.totp_secret;
 
         if (!secret) {
             return res.status(400).json({ error: '2FA not set up for this admin' });
@@ -213,6 +214,13 @@ export const verify2FA = async (req: Request, res: Response) => {
         const isValid = authenticator.verify({ token, secret });
 
         if (isValid) {
+            if (isPending) {
+                // Activate 2FA by moving the secret from pending to active
+                await adminDoc.ref.update({
+                    totp_secret: secret,
+                    pending_totp_secret: FieldValue.delete()
+                });
+            }
             res.json({ message: '2FA Verified Successfully' });
         } else {
             res.status(400).json({ error: 'Invalid Token' });
