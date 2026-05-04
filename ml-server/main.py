@@ -105,6 +105,8 @@ async def chat_endpoint(request: ChatRequest):
         
         generated_ids = model.generate(
             inputs.input_ids,
+            attention_mask=inputs.attention_mask,
+            pad_token_id=tokenizer.eos_token_id,
             max_new_tokens=request.max_tokens,
             temperature=request.temperature,
             do_sample=True
@@ -160,6 +162,8 @@ async def admin_analyze_endpoint(request: AdminAnalysisRequest):
         
         generated_ids = model.generate(
             inputs.input_ids,
+            attention_mask=inputs.attention_mask,
+            pad_token_id=tokenizer.eos_token_id,
             max_new_tokens=request.max_tokens,
             temperature=0.5, # Lower temp for analytical tasks
             do_sample=True
