@@ -330,6 +330,9 @@ Guidelines:
 - If asked "Monitor security", summarize the 'security' section.
 - Be concise and professional.`;
             } else if (req.user.role === 'doctor' || req.user.doctorId) {
+                if (!req.user.doctorId) {
+                    return res.status(401).json({ error: 'Invalid doctor token' });
+                }
                 userRole = 'doctor';
                 contextData = await getDoctorContext(req.user.doctorId);
 
@@ -461,7 +464,7 @@ When user asks about their health records or visits, you can reference their med
                     endpoint: '/api/bot/chat',
                     temperature: temperature || 0.7,
                     maxTokens: max_tokens || 1024,
-                    language: requestedLang || 'en'
+                    // language: requestedLang || 'en'
                 }
             });
         } catch (storageError) {

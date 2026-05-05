@@ -58,10 +58,11 @@ export const getMLResponseHistory = async (
     }
 
     const snapshot = await query.get();
-    return snapshot.docs.map(doc => ({
+    const history: MLResponseData[] = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-    })) as MLResponseData[];
+    } as MLResponseData));
+    return history;
   } catch (error) {
     console.error('Error getting ML response history:', error);
     return [];

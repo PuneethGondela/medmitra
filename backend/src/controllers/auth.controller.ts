@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { adminDb, adminAuth, COLLECTIONS } from '../config/firebase';
 import * as otplib from 'otplib';
-const authenticator = otplib.authenticator || otplib.default?.authenticator || { generateSecret: () => '', keyuri: () => '', verify: () => false };
+const authenticator = otplib.authenticator || (otplib as any).default?.authenticator || { generateSecret: () => '', keyuri: () => '', verify: () => false };
 import QRCode from 'qrcode';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -14,9 +14,15 @@ export const loginAdmin = async (req: Request, res: Response) => {
 
         // Support both old format (email/password) and new format (identifier/password or email/mobile_number/password)
         const loginIdentifier = identifier || email || mobile_number;
-        if (!loginIdentifier || !password) {
+        if (typeof loginIdentifier !== 'string' || typeof password !== 'string' || !loginIdentifier || !password) {
             return res.status(400).json({ error: 'Identifier (email/mobile) and password required' });
         }
+
+        // Input Validation (Length limits) to prevent DOS
+        if (loginIdentifier.length > 255 || password.length > 255) {
+            return res.status(400).json({ error: 'Input fields exceed maximum length' });
+        }
+
 
         // Determine if identifier is email or mobile number
         const isEmail = loginIdentifier.includes('@');
@@ -140,9 +146,12 @@ export const loginAdmin = async (req: Request, res: Response) => {
 };
 
 // Enable 2FA
-export const enable2FA = async (req: Request, res: Response) => {
+export const generate2FA = async (req: Request, res: Response) => {
     try {
-        const adminId = req.user.adminId;
+        const adminId = req.user?.adminId;
+        if (!adminId) {
+            return res.status(401).json({ error: 'Unauthenticated' });
+        }
         const secret = authenticator.generateSecret();
         const otpauth = authenticator.keyuri(adminId, 'MediMitr Admin', secret);
 
@@ -162,7 +171,10 @@ export const enable2FA = async (req: Request, res: Response) => {
 // Verify & Activate 2FA
 export const verify2FA = async (req: Request, res: Response) => {
     try {
-        const adminId = req.user.adminId;
+        const adminId = req.user?.adminId;
+        if (!adminId) {
+            return res.status(401).json({ error: 'Unauthenticated' });
+        }
         const { token } = req.body;
 
         const adminDoc = await adminDb.collection(COLLECTIONS.ADMINS).doc(adminId).get();

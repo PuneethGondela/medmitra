@@ -20,7 +20,7 @@ export const getAllDonors = async (req: Request, res: Response) => {
             const donors = snapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
                 .filter(donor => {
-                    const donorCity = (donor.city || '').toLowerCase();
+                    const donorCity = String((donor as { city?: unknown }).city ?? '').toLowerCase();
                     return donorCity.includes(String(city).toLowerCase());
                 });
 
@@ -44,7 +44,7 @@ export const getAllDonors = async (req: Request, res: Response) => {
             const donors = snapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
                 .filter(donor => {
-                    const donorCity = (donor.city || '').toLowerCase();
+                    const donorCity = String((donor as { city?: unknown }).city ?? '').toLowerCase();
                     return donorCity.includes(String(city).toLowerCase());
                 });
 

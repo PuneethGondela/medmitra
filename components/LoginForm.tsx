@@ -50,7 +50,7 @@ export default function LoginForm() {
       }
     } catch (err: any) {
       console.error("Error in routeUser:", err);
-      setError(err?.message ?? "Failed to route user. Please try again.");
+      setError("Failed to route user. Please try again.");
       setLoading(false);
     }
   };
@@ -90,6 +90,12 @@ export default function LoginForm() {
         }
         return; // Exit on success
       } catch (apiError: any) {
+        // Handle explicit backend API error payload mapping
+        if (apiError?.message && apiError.message !== 'Doctor login requires email address.') {
+            setError(apiError.message);
+            setLoading(false);
+            return;
+        }
         // If API login fails, try Firebase Auth for users/workers
         console.log("API login failed, trying Firebase Auth...");
       }
@@ -149,10 +155,13 @@ export default function LoginForm() {
         setError("Invalid email address format.");
       } else if (err.code === 'auth/configuration-not-found') {
         setError("Firebase Authentication is not configured. Please contact administrator.");
-      } else if (err.message.includes('Network error')) {
-        setError("Cannot connect to server. Please check if the backend is running.");
+      } else if (err?.message?.includes('Network error')) {
+        setError("Cannot connect to server. Please check your connection.");
+      } else if (err?.error) {
+        // Handle explicit backend API error payload mapping
+        setError(err.error);
       } else {
-        setError(err?.message ?? "Sign-in failed. Please try again.");
+        setError("Sign-in failed. Please try again.");
       }
     } finally {
       setLoading(false);

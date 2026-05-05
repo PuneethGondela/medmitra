@@ -12,8 +12,12 @@ export const loginDoctor = async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;
 
-        if (!email || !password) {
+        if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
             return res.status(400).json({ error: 'Email and password required' });
+        }
+
+        if (email.length > 255 || password.length > 255) {
+            return res.status(400).json({ error: 'Input fields exceed maximum length' });
         }
 
         const authResult = await authenticateDoctor(email, password, req.ip);

@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
 try:
@@ -7,7 +7,7 @@ try:
     print("Tokenizer loaded.")
 
     print("Loading model...")
-    model = AutoModelForSeq2SeqLM.from_pretrained("facebook/nllb-200-distilled-600M")
+    model = AutoModelForCausalLM.from_pretrained("facebook/nllb-200-distilled-600M")
     print("Model loaded.")
     
     print("Testing translation...")
