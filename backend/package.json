@@ -15,6 +15,7 @@
         "test:doctor": "ts-node src/test_doctor_backend.ts",
         "test:all": "ts-node src/test_all_endpoints.ts",
         "test:connectivity": "ts-node src/test-connectivity.ts",
+        "test:unit": "jest --testPathPattern=src/__tests__",
         "init:firestore": "ts-node scripts/init-firestore.ts"
     },
     "keywords": [],
@@ -45,6 +46,9 @@
         "zod": "^3.22.4"
     },
     "devDependencies": {
+        "@types/jest": "^30.0.0",
+        "jest": "^30.3.0",
+        "ts-jest": "^29.4.9",
         "ts-node-dev": "^2.0.0"
     }
 }
