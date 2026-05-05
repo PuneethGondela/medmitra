@@ -329,9 +329,12 @@ Guidelines:
 - If asked "How many doctors?", look at 'stats.totalDoctors'.
 - If asked "Monitor security", summarize the 'security' section.
 - Be concise and professional.`;
-            } else if (req.user.role === 'doctor' || req.user.doctorId || "") {
+            } else if (req.user.role === 'doctor' || req.user.doctorId) {
+                if (!req.user.doctorId) {
+                    return res.status(401).json({ error: 'Invalid doctor token' });
+                }
                 userRole = 'doctor';
-                contextData = await getDoctorContext(req.user.doctorId || "");
+                contextData = await getDoctorContext(req.user.doctorId);
 
                 const donorList = contextData?.availableDonors?.map((d: any) =>
                     `${d.full_name} - ${d.blood_group} - ${d.city} - ${d.mobile_number}`

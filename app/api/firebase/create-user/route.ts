@@ -13,11 +13,11 @@ const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 // Simple cleanup interval to prevent memory leaks
 setInterval(() => {
   const now = Date.now();
-  for (const [ip, record] of rateLimitMap.entries()) {
+  rateLimitMap.forEach((record, ip) => {
     if (now > record.resetTime) {
       rateLimitMap.delete(ip);
     }
-  }
+  });
 }, WINDOW_MS);
 
 function checkRateLimit(ip: string): boolean {
@@ -152,7 +152,11 @@ export async function POST(req: NextRequest) {
       });
     } catch (error: any) {
       // Rollback: delete auth user if Firestore insert fails
-      await adminAuth.deleteUser(createdUser.uid);
+      try {
+        await adminAuth.deleteUser(createdUser.uid);
+      } catch (rollbackError) {
+        console.error("Rollback deleteUser failed:", rollbackError, { uid: createdUser.uid });
+      }
       return NextResponse.json(
         { error: "Failed to initialize worker profile. Please try again later." },
         { status: 400 }

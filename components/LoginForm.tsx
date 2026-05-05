@@ -90,6 +90,12 @@ export default function LoginForm() {
         }
         return; // Exit on success
       } catch (apiError: any) {
+        // Handle explicit backend API error payload mapping
+        if (apiError?.message && apiError.message !== 'Doctor login requires email address.') {
+            setError(apiError.message);
+            setLoading(false);
+            return;
+        }
         // If API login fails, try Firebase Auth for users/workers
         console.log("API login failed, trying Firebase Auth...");
       }

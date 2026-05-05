@@ -12,7 +12,7 @@ export const loginDoctor = async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;
 
-        if (!email || !password) {
+        if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
             return res.status(400).json({ error: 'Email and password required' });
         }
 
