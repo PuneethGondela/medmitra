@@ -40,6 +40,8 @@ export default function RegisterForm() {
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm((s) => ({ ...s, [e.target.name]: e.target.value }));
+    // Clear error when user types
+    if (error) setError(null);
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -108,8 +110,11 @@ export default function RegisterForm() {
         setError("Password is too weak. Please use a stronger password.");
       } else if (err.code === 'auth/invalid-email') {
         setError("Invalid email address. Please check your email.");
+      } else if (err?.error) {
+        // Handle explicit backend API error payload mapping
+        setError(err.error);
       } else {
-        setError(err?.message ?? "An unexpected error occurred. Please try again.");
+        setError("An unexpected error occurred. Please try again.");
       }
     } finally {
       setLoading(false);

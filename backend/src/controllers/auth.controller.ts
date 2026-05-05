@@ -3,7 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { adminDb, adminAuth, COLLECTIONS } from '../config/firebase';
 import * as otplib from 'otplib';
-const authenticator = otplib.authenticator || otplib.default?.authenticator || { generateSecret: () => '', keyuri: () => '', verify: () => false };
+const authenticator = otplib.authenticator || (otplib as any).default?.authenticator || { generateSecret: () => '', keyuri: () => '', verify: () => false };
 import QRCode from 'qrcode';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -17,6 +17,12 @@ export const loginAdmin = async (req: Request, res: Response) => {
         if (!loginIdentifier || !password) {
             return res.status(400).json({ error: 'Identifier (email/mobile) and password required' });
         }
+
+        // Input Validation (Length limits) to prevent DOS
+        if (loginIdentifier.length > 255 || password.length > 255) {
+            return res.status(400).json({ error: 'Input fields exceed maximum length' });
+        }
+
 
         // Determine if identifier is email or mobile number
         const isEmail = loginIdentifier.includes('@');
@@ -140,9 +146,9 @@ export const loginAdmin = async (req: Request, res: Response) => {
 };
 
 // Enable 2FA
-export const enable2FA = async (req: Request, res: Response) => {
+export const generate2FA = async (req: Request, res: Response) => {
     try {
-        const adminId = req.user.adminId;
+        const adminId = req.user?.adminId || "";
         const secret = authenticator.generateSecret();
         const otpauth = authenticator.keyuri(adminId, 'MediMitr Admin', secret);
 
@@ -162,7 +168,7 @@ export const enable2FA = async (req: Request, res: Response) => {
 // Verify & Activate 2FA
 export const verify2FA = async (req: Request, res: Response) => {
     try {
-        const adminId = req.user.adminId;
+        const adminId = req.user?.adminId || "";
         const { token } = req.body;
 
         const adminDoc = await adminDb.collection(COLLECTIONS.ADMINS).doc(adminId).get();
@@ -194,5 +200,39 @@ export const verify2FA = async (req: Request, res: Response) => {
         }
     } catch (error) {
         res.status(500).json({ error: 'Failed to verify 2FA' });
+    }
+};
+
+// Create initial super admin
+export const createInitialAdmin = async (req: Request, res: Response) => {
+    try {
+        const { email, password, full_name, mobile_number } = req.body;
+
+        if (!email || !password || !full_name) {
+            return res.status(400).json({ error: 'Email, password, and full name required' });
+        }
+
+        const adminsSnapshot = await adminDb.collection(COLLECTIONS.ADMINS).limit(1).get();
+        if (!adminsSnapshot.empty) {
+            return res.status(403).json({ error: 'Admin already exists. Cannot use initial setup.' });
+        }
+
+        const password_hash = await bcrypt.hash(password, 10);
+
+        const newAdminRef = await adminDb.collection(COLLECTIONS.ADMINS).add({
+            email,
+            mobile_number: mobile_number || null,
+            password_hash,
+            full_name,
+            role: 'SUPER_ADMIN',
+            account_status: 'ACTIVE',
+            created_at: FieldValue.serverTimestamp(),
+            updated_at: FieldValue.serverTimestamp()
+        });
+
+        res.status(201).json({ message: 'Initial admin created', id: newAdminRef.id });
+    } catch (error: any) {
+        console.error('CREATE ADMIN ERROR:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 };

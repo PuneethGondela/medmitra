@@ -1,3 +1,4 @@
+import { authLimiter } from '../middleware/rateLimiter';
 import { Router } from 'express';
 import {
     createDoctor,
@@ -14,7 +15,7 @@ import { authenticateToken, requireAdmin, requireDoctor, requireAdminOrDoctor } 
 const router = Router();
 
 // Public Routes
-router.post('/login', loginDoctor);
+router.post('/login', authLimiter, loginDoctor);
 
 // Admin-only: Doctor management
 router.post('/', authenticateToken, requireAdmin(), createDoctor);

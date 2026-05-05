@@ -61,7 +61,7 @@ export const getMLResponseHistory = async (
     return snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
-    })) as MLResponseData[];
+    })) as unknown as MLResponseData[];
   } catch (error) {
     console.error('Error getting ML response history:', error);
     return [];

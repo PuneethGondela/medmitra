@@ -329,9 +329,9 @@ Guidelines:
 - If asked "How many doctors?", look at 'stats.totalDoctors'.
 - If asked "Monitor security", summarize the 'security' section.
 - Be concise and professional.`;
-            } else if (req.user.role === 'doctor' || req.user.doctorId) {
+            } else if (req.user.role === 'doctor' || req.user.doctorId || "") {
                 userRole = 'doctor';
-                contextData = await getDoctorContext(req.user.doctorId);
+                contextData = await getDoctorContext(req.user.doctorId || "");
 
                 const donorList = contextData?.availableDonors?.map((d: any) =>
                     `${d.full_name} - ${d.blood_group} - ${d.city} - ${d.mobile_number}`
@@ -461,7 +461,7 @@ When user asks about their health records or visits, you can reference their med
                     endpoint: '/api/bot/chat',
                     temperature: temperature || 0.7,
                     maxTokens: max_tokens || 1024,
-                    language: requestedLang || 'en'
+                    // language: requestedLang || 'en'
                 }
             });
         } catch (storageError) {

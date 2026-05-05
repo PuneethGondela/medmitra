@@ -1,10 +1,11 @@
+import { authLimiter } from '../middleware/rateLimiter';
 import { Router } from 'express';
 import { loginAdmin, createInitialAdmin, generate2FA, verify2FA } from '../controllers/auth.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.post('/login', loginAdmin);
+router.post('/login', authLimiter, loginAdmin);
 router.post('/setup-admin', createInitialAdmin);
 
 // 2FA Routes (Protected)

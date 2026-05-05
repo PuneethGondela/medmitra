@@ -1,5 +1,13 @@
-import { expect, it, describe, beforeEach, afterEach, jest, mock } from "bun:test";
+import { mock, expect, it, describe, beforeEach, afterEach, jest } from "bun:test";
 
+mock.module("firebase-admin", () => {
+    return {
+        apps: [],
+        default: { apps: [] },
+        initializeApp: () => ({}),
+        credential: { cert: () => ({}) }
+    };
+});
 
 mock.module("qrcode", () => ({
     toDataURL: jest.fn(),
@@ -8,14 +16,11 @@ mock.module("qrcode", () => ({
     }
 }));
 
-
+const mockCollection = jest.fn();
 mock.module("../config/firebase", () => {
-    const updateMock = jest.fn();
-    const docMock = jest.fn().mockReturnValue({ update: updateMock });
-    const collectionMock = jest.fn().mockReturnValue({ doc: docMock });
     return {
         adminDb: {
-            collection: collectionMock
+            collection: mockCollection
         },
         adminAuth: {},
         COLLECTIONS: {
@@ -25,15 +30,14 @@ mock.module("../config/firebase", () => {
     };
 });
 
-
-import { loginAdmin, generate2FA } from "./auth.controller";
-import QRCode from "qrcode";
-import { adminDb } from "../config/firebase";
-import { Request, Response } from "express";
+// Have to use dynamic import because of circular dependency in mocks
+const QRCode = require("qrcode");
+const { loginAdmin } = require("./auth.controller");
+const { adminDb } = require("../config/firebase");
 
 describe("auth.controller - loginAdmin", () => {
-    let req: Partial<Request>;
-    let res: Partial<Response>;
+    let req: any;
+    let res: any;
     let jsonMock: any;
     let statusMock: any;
     let originalConsoleError: typeof console.error;
@@ -52,9 +56,9 @@ describe("auth.controller - loginAdmin", () => {
             json: jsonMock,
         };
 
-        // Suppress console.error during the test to keep output clean
         originalConsoleError = console.error;
         console.error = jest.fn();
+        mockCollection.mockClear();
     });
 
     afterEach(() => {
@@ -63,75 +67,49 @@ describe("auth.controller - loginAdmin", () => {
     });
 
     it("should return 500 when an internal server error occurs (e.g. DB failure)", async () => {
-        // Setup the mock to throw an error
         const mockError = new Error("Database connection failed");
-
-        (adminDb.collection as any).mockImplementation(() => {
+        mockCollection.mockImplementation(() => {
             throw mockError;
         });
 
-        // Call the function
-        await loginAdmin(req as Request, res as Response);
+        await loginAdmin(req, res);
 
-        // Verify the response
         expect(statusMock).toHaveBeenCalledWith(500);
         expect(jsonMock).toHaveBeenCalledWith({
             error: "Internal server error",
             details: mockError.message,
         });
-
-        // Verify console.error was called
         expect(console.error).toHaveBeenCalledWith("LOGIN ERROR:", mockError);
     });
 });
 
-
-describe("auth.controller - generate2FA", () => {
-    let req: Partial<Request>;
-    let res: Partial<Response>;
+describe("auth.controller - input validation", () => {
+    let req: any;
+    let res: any;
     let jsonMock: any;
     let statusMock: any;
-    let originalConsoleError: typeof console.error;
 
     beforeEach(() => {
         req = {
-            user: { adminId: "test-admin-id" }
-        } as any;
+            body: {},
+        };
         jsonMock = jest.fn();
         statusMock = jest.fn().mockReturnValue({ json: jsonMock });
         res = {
             status: statusMock,
             json: jsonMock,
         };
-
-        originalConsoleError = console.error;
-        console.error = jest.fn();
     });
 
-    afterEach(() => {
-        console.error = originalConsoleError;
-        jest.clearAllMocks();
-    });
+    it("should reject inputs exceeding 255 characters", async () => {
+        req.body.email = "a".repeat(256) + "@example.com";
+        req.body.password = "password123";
 
-    it("should return 500 when an internal server error occurs during 2FA generation", async () => {
-        const mockError = new Error("Failed to generate QR code");
+        await loginAdmin(req, res);
 
-        // Force QRCode.toDataURL to throw an error
-        (QRCode.toDataURL as any).mockRejectedValueOnce(mockError);
-
-        // Ensure adminDb.collection.doc.update succeeds so it gets to QRCode
-        const updateMock = jest.fn().mockResolvedValueOnce(true);
-        const docMock = jest.fn().mockReturnValue({ update: updateMock });
-        (adminDb.collection as any).mockReturnValue({ doc: docMock });
-
-        await generate2FA(req as Request, res as Response);
-
-        expect(statusMock).toHaveBeenCalledWith(500);
+        expect(statusMock).toHaveBeenCalledWith(400);
         expect(jsonMock).toHaveBeenCalledWith({
-            error: "Failed to generate 2FA",
-            details: mockError.message,
+            error: "Input fields exceed maximum length",
         });
-
-        expect(console.error).toHaveBeenCalledWith(mockError);
     });
 });

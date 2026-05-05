@@ -4,7 +4,55 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 
+
+// Simple in-memory rate limiter for Next.js Serverless Route
+const rateLimitMap = new Map<string, { count: number, resetTime: number }>();
+const MAX_REQUESTS = 5; // Max 5 requests per window
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+// Simple cleanup interval to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of rateLimitMap.entries()) {
+    if (now > record.resetTime) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, WINDOW_MS);
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+
+  if (!record) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + WINDOW_MS });
+    return true;
+  }
+
+  if (now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + WINDOW_MS });
+    return true;
+  }
+
+  if (record.count >= MAX_REQUESTS) {
+    return false;
+  }
+
+  record.count += 1;
+  return true;
+}
+
 export async function POST(req: NextRequest) {
+  // Extract IP (Next.js serverless proxy headers)
+  const ip = req.headers.get('x-forwarded-for') || req.ip || '127.0.0.1';
+
+  if (!checkRateLimit(ip)) {
+    return NextResponse.json(
+      { error: "Too many account creation attempts. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   try {
     // Get auth token from request
     const authHeader = req.headers.get("authorization");
@@ -69,8 +117,15 @@ export async function POST(req: NextRequest) {
         emailVerified: true,
       });
     } catch (error: any) {
+
+      // Map specific Firebase errors to safe messages
+      let safeMessage = "Failed to create account. Please verify your details and try again.";
+      if (error.code === 'auth/email-already-exists') safeMessage = "This email address is already in use.";
+      if (error.code === 'auth/invalid-email') safeMessage = "The provided email address is invalid.";
+      if (error.code === 'auth/invalid-password') safeMessage = "The password must be at least 6 characters long.";
+
       return NextResponse.json(
-        { error: error.message || "Failed to create auth user" },
+        { error: safeMessage },
         { status: 400 }
       );
     }
@@ -99,7 +154,7 @@ export async function POST(req: NextRequest) {
       // Rollback: delete auth user if Firestore insert fails
       await adminAuth.deleteUser(createdUser.uid);
       return NextResponse.json(
-        { error: error.message || "Failed to create worker profile" },
+        { error: "Failed to initialize worker profile. Please try again later." },
         { status: 400 }
       );
     }
@@ -136,7 +191,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error("Error creating worker:", error);
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: "An unexpected error occurred during account creation." },
       { status: 500 }
     );
   }
